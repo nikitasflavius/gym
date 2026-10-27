@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Блокнот">
+<meta name="theme-color" content="#1f3a5c">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Тренировочный блокнот</title>
+<style>
+:root{
+  --bg:#f2f5f9;--surface:#ffffff;--surface2:#e8eef6;--ink:#16243a;--muted:#667689;--line:#d5dde8;
+  --navy:#1f3a5c;--blue:#2a4d7a;--or:#ee6c3b;--or-ink:#ffffff;--or-soft:#fff1ea;--or-line:#f6c8b4;
+  --ok:#2f9e6b;--ok-soft:#e3f3ea;--bad:#c2402b;--bad-soft:#fbe7e2;--star:#a2730c;--star-soft:#f6edd4;
+  --hero:#2a4d7a;--hero-ink:#ffffff;
+  --d-warm:#8d9db3;--d-easy:#3f9a97;--d-mid:#d9a92c;--d-hard:#ee6c3b;--d-fail:#c2402b;
+  --shadow:0 1px 2px rgba(20,40,70,.08);
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1724;--surface:#16233a;--surface2:#1e2f4a;--ink:#e8eef6;--muted:#94a5bb;--line:#2a3c58;
+  --navy:#b8d0ee;--blue:#5b8cc6;--or:#f0794a;--or-ink:#1a0d06;--or-soft:#3a2317;--or-line:#6b3a24;
+  --ok:#4cc58a;--ok-soft:#163726;--bad:#f0705a;--bad-soft:#3d1f19;--star:#e2b44a;--star-soft:#3a2f14;
+  --hero:#1f3d66;--hero-ink:#ffffff;
+  --d-warm:#7587a0;--d-easy:#4cb3af;--d-mid:#e2b44a;--d-hard:#f0794a;--d-fail:#e0583f;
+  --shadow:none;color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 var(--f);
+  padding-bottom:calc(84px + env(safe-area-inset-bottom,0px));-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation;padding:0}
+input,textarea,select{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%}
+textarea{min-height:90px;resize:vertical}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--or);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+#wrap{max-width:560px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-left,0px)) 0 max(16px,env(safe-area-inset-right,0px))}
+#top{position:sticky;top:0;z-index:20;background:var(--bg);padding:calc(8px + env(safe-area-inset-top,0px)) 0 8px}
+.chips{display:flex;gap:8px}
+.chip{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 10px;min-width:0}
+.chip small{display:block;font-size:10px;letter-spacing:.05em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip b{font-size:20px;color:var(--navy)}
+.chip.rest{background:var(--or-soft);border-color:var(--or-line)}
+.chip.rest b{color:var(--or)}
+.chip.rest.over{background:var(--or);border-color:var(--or)}
+.chip.rest.over small,.chip.rest.over b{color:var(--or-ink)}
+body:not(.has-top) #top{padding:calc(6px + env(safe-area-inset-top,0px)) 0 0}
+h1{font-size:26px;font-weight:800;color:var(--navy);margin:2px 0 12px;letter-spacing:-.01em}
+h2{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:22px 2px 8px}
+.date{font-size:13px;color:var(--muted);margin:6px 2px 0}
+.hero{background:var(--hero);color:var(--hero-ink);border-radius:20px;padding:16px}
+.tag{display:inline-block;background:rgba(255,255,255,.18);border-radius:10px;padding:3px 9px;font-size:10.5px;font-weight:700;letter-spacing:.05em}
+.hero .big{font-size:32px;font-weight:800;margin:8px 0 2px}
+.hero .big i{font-style:normal;color:#ffb89c}
+.hero p{margin:0 0 14px;font-size:13px;opacity:.88}
+.btn{display:block;width:100%;text-align:center;border-radius:14px;font-weight:800;font-size:16px;padding:14px 12px;background:var(--surface);border:1px solid var(--line);color:var(--blue)}
+.btn.or{background:var(--or);border-color:var(--or);color:var(--or-ink)}
+.btn.dis{opacity:.45}
+.btn.sm{font-size:14px;padding:10px 12px;border-radius:12px;font-weight:700}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin-top:10px;box-shadow:var(--shadow)}
+.crow{display:flex;align-items:center;gap:12px;width:100%;text-align:left}
+.crow .ltr{width:40px;height:40px;border-radius:12px;background:var(--surface2);color:var(--navy);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.crow b{font-size:16px;color:var(--navy)}
+.crow small{display:block;font-size:12px;color:var(--muted)}
+.crow .go{margin-left:auto;color:var(--muted);font-size:20px}
+.wcard .top{display:flex;align-items:center;gap:10px}
+.wcard .val{font-size:30px;font-weight:800;color:var(--navy);padding:2px 6px;border-radius:10px}
+.wcard .val small{font-size:14px;font-weight:600;color:var(--muted)}
+.wcard .go{margin-left:auto;background:var(--ok);color:#fff;border-radius:12px;padding:10px 16px;font-weight:800}
+.wcard .go.done{background:var(--surface2);color:var(--muted)}
+.wcard .avg{font-size:12.5px;color:var(--muted);margin-top:4px}
+.chart{width:100%;height:auto;display:block;margin-top:8px}
+.chart text{fill:var(--muted);font-size:9px;font-family:var(--f)}
+.recent{display:grid;gap:6px;margin-top:6px}
+.rrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:9px 12px;font-size:14px}
+.rrow b{font-weight:800;color:var(--navy)} .rrow small{color:var(--muted);font-size:12.5px}
+/* session */
+.warm{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:6px;width:100%;text-align:left}
+.warm b{font-size:13px;color:var(--navy)} .warm p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.irow{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:8px}
+.irow .st{width:24px;height:24px;border-radius:50%;background:var(--surface2);color:var(--muted);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.irow.done .st{background:var(--ok);color:#fff}
+.irow.skip .st{background:var(--surface2)} .irow.skip .nm{text-decoration:line-through;color:var(--muted)}
+.irow .nm{font-weight:700;color:var(--navy);line-height:1.25}
+.irow .pg{font-size:12.5px;color:var(--muted)}
+.lnk{border-left:4px solid var(--or)!important}
+.lnk-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.05em;color:var(--or);margin-left:6px}
+.ex{margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:var(--shadow)}
+.ex-h{display:flex;gap:12px;align-items:flex-start}
+.ex-img{width:56px;height:56px;border-radius:12px;overflow:hidden;flex:none;background:var(--surface2)}
+.ex-img svg{width:100%;height:100%;display:block}
+.ex .nm{font-size:17px;font-weight:800;color:var(--navy);line-height:1.2}
+.ex .sch{font-size:12px;color:var(--muted);margin-top:3px}
+.vars{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.vars button{border:1px solid var(--line);background:var(--surface2);border-radius:10px;padding:6px 10px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.vars button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.dots{display:flex;gap:5px;margin-top:10px}
+.dots i{flex:1;height:6px;border-radius:3px;background:var(--surface2);max-width:60px}
+.dots i.d{background:var(--blue)} .dots i.c{background:var(--or)} .dots i.x{background:var(--ok)}
+.last{margin-top:10px;background:var(--bg);border-radius:12px;padding:8px 10px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.last b{color:var(--ink)}
+.tech{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.tech .tb{color:var(--blue);font-weight:700;padding:4px 0}
+.tech .big{margin-top:6px;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.tech .big svg{width:100%;height:auto;display:block}
+.tech p{margin:6px 0 0}
+.set{margin:14px 2px 0;font-size:11.5px;font-weight:800;letter-spacing:.07em;color:var(--muted);display:flex;gap:8px;align-items:center}
+.set .tt{background:var(--or-soft);color:var(--or);border-radius:8px;padding:2px 8px}
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px 8px 10px;text-align:center}
+.step small{font-size:11px;color:var(--muted);display:block;line-height:1.2;min-height:13px}
+.step .n{display:flex;align-items:center;justify-content:space-between;margin-top:4px;gap:4px}
+.step .pm{width:42px;height:42px;border-radius:13px;background:var(--surface2);color:var(--navy);font-size:24px;font-weight:700;flex:none}
+.step .v{flex:1;font-size:27px;font-weight:800;color:var(--navy);border-radius:10px;padding:2px 0}
+.qw{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.qw button{background:var(--surface2);border-radius:10px;padding:6px 11px;font-size:13px;font-weight:700;color:var(--blue)}
+.qw button.on{background:var(--blue);color:#fff}
+.qw .lb{font-size:11px;color:var(--muted);align-self:center;margin-right:2px}
+.types{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.types button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.types button.on{background:var(--or-soft);border-color:var(--or-line);color:var(--or)}
+.diff{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:10px}
+.diff button{border-radius:12px;padding:10px 0 9px;font-size:11px;font-weight:800;color:var(--ink);background:var(--surface);border:2px solid var(--c)}
+.diff button.on{background:var(--c);color:#fff}
+.diff button.on.d-mid{color:#3a2c05}
+.d-warm{--c:#7d8fa7} .d-easy{--c:var(--d-easy)} .d-mid{--c:var(--d-mid)} .d-hard{--c:var(--d-hard)} .d-fail{--c:var(--d-fail)}
+.dn{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.sc{background:var(--surface2);border-radius:10px;padding:6px 9px;font-size:12px;font-weight:700;color:var(--navy)}
+.sc.drop{box-shadow:inset 0 0 0 1.5px var(--or-line)}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.mini button{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 0;font-size:13px;font-weight:700;color:var(--blue)}
+.mini button.ask{background:var(--bad-soft);border-color:var(--bad-soft);color:var(--bad)}
+.hint{font-size:12.5px;color:var(--muted);margin:10px 2px 0}
+/* summary */
+.sum{background:var(--hero);color:var(--hero-ink);border-radius:20px;padding:16px}
+.sum .k{font-size:11px;letter-spacing:.06em;opacity:.75}
+.sum .bg{font-size:40px;font-weight:800;margin-top:4px}
+.sum .bg small{font-size:14px;font-weight:600;opacity:.8}
+.sum .s2{font-size:13px;opacity:.88;margin-top:2px}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.kp div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:9px 10px}
+.kp b{font-size:19px;color:var(--navy);display:block;white-space:nowrap}
+.kp small{font-size:11px;color:var(--muted)}
+.bars{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 12px;margin-top:10px}
+.bar{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 40px;gap:8px;align-items:center;font-size:12px;margin:6px 0}
+.bar .t{height:9px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--blue);border-radius:5px}
+.bar .t i.long{background:var(--or)}
+.bar span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar span:last-child{text-align:right;color:var(--muted)}
+.syncline{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;font-weight:700;border-radius:12px;padding:10px 12px;background:var(--ok-soft);color:var(--ok)}
+.syncline.wait{background:var(--star-soft);color:var(--star)} .syncline.off{background:var(--surface2);color:var(--muted)} .syncline.err{background:var(--bad-soft);color:var(--bad)}
+.prs{margin-top:10px;font-size:13px;color:var(--ink)}
+/* progress */
+.prow{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:10px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:8px}
+.prow b{font-size:14px;color:var(--navy);display:block;line-height:1.25}
+.prow small{font-size:12px;color:var(--muted)}
+.up{display:inline-block;background:var(--ok-soft);color:var(--ok);border-radius:8px;padding:1px 7px;font-size:11px;font-weight:800;margin-left:4px}
+/* more */
+.field{margin-top:10px}.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 2px 4px}
+.sw{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:6px 2px}
+.sw button{width:50px;height:30px;border-radius:15px;background:var(--surface2);position:relative}
+.sw button::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .15s}
+.sw button.on{background:var(--ok)} .sw button.on::after{left:23px}
+.exl{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px;width:100%;text-align:left}
+.exl small{color:var(--muted);font-size:12px}
+.exl.arch{opacity:.5}
+/* nav */
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px max(8px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
+#nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--muted);padding:5px 0;position:relative;font-weight:600}
+#nav button.on{color:var(--navy);font-weight:800}
+#nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sdot{position:absolute;top:3px;right:calc(50% - 22px);width:9px;height:9px;border-radius:50%;background:var(--muted);border:2px solid var(--surface)}
+.sdot.ok{background:var(--ok)} .sdot.wait{background:var(--d-mid)} .sdot.err{background:var(--bad)}
+/* sheet */
+#sheet{position:fixed;inset:0;z-index:50;background:rgba(10,20,35,.5);display:flex;align-items:flex-end;justify-content:center}
+#sheet[hidden]{display:none}
+.sh{background:var(--bg);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:16px max(16px,env(safe-area-inset-left,0px)) calc(18px + env(safe-area-inset-bottom,0px));max-height:88%;overflow:auto}
+.sh h3{margin:0 0 10px;font-size:18px;color:var(--navy)}
+.sh .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.sh .list{display:grid;gap:6px;margin-top:10px}
+.pick{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;text-align:left;width:100%}
+.pick b{color:var(--navy);font-size:14px} .pick small{color:var(--muted);font-size:12px}
+.pre{white-space:pre-wrap;font-size:12.5px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;max-height:200px;overflow:auto}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;z-index:60;max-width:calc(100% - 32px);text-align:center}
+#toast[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.logrow{display:flex;gap:8px;margin-top:12px}
+.logrow .btn.or{flex:1}
+.logrow .dropb{width:auto;flex:none;padding:14px 16px;color:var(--or);border-color:var(--or-line);background:var(--or-soft)}
+.sh .field input,.sh .field select,.sh .field textarea{margin-top:0}
+.hero .btn.or{background:var(--or)}
+
+</style>
+</head>
+<body>
+<div id="wrap"><div id="top"></div><main id="app"></main></div>
+<nav id="nav"></nav>
+<div id="sheet" hidden></div>
+<div id="toast" hidden></div>
+<script>
+'use strict';
+/* ====== Тренировочный блокнот · ядро: состояние, утилиты, логика ====== */
+const KEY = 'gym-app-v1';
+const SEED = {"pool":[{"id":"e01","name":"Жим штанги лёжа классический","group":"Грудь","load":"barbell","metric":"reps","step":2.5,"vg":"","icon":"bench_flat","tech":"Лопатки сведены и прижаты к скамье, небольшой прогиб поясницы. Гриф опускается к нижней трети груди, локти под углом около 45° к корпусу, не разводятся до 90°.","arch":0},{"id":"e02","name":"Жим гантелей на наклонной 30°","group":"Грудь (верх)","load":"dumbbell","metric":"reps","step":2,"vg":"","icon":"bench_incline","tech":"","arch":0},{"id":"e03","name":"Жим сидя в тренажёре","group":"Передняя дельта","load":"stack","metric":"reps","step":5,"vg":"vg-press","icon":"seated_press","tech":"","arch":0},{"id":"e22","name":"Жим сидя в Смите","group":"Передняя дельта","load":"smith","metric":"reps","step":2.5,"vg":"vg-press","icon":"seated_press","tech":"Считаем только блины, гриф Смита не учитываем.","arch":0},{"id":"e04","name":"Махи гантелями в стороны","group":"Средняя дельта","load":"dumbbell","metric":"reps","step":1,"vg":"","icon":"lateral_raise","tech":"Лёгкий наклон корпуса вперёд, локти чуть согнуты и ведут движение. Поднимаешь до уровня плеч, не выше.","arch":0},{"id":"e05","name":"Сведения в кроссовере","group":"Грудь (внутр. край)","load":"stack","metric":"reps","step":2.5,"vg":"","icon":"crossover","tech":"","arch":0},{"id":"e06","name":"Разгибание на трицепс из-за головы","group":"Трицепс","load":"stack","metric":"reps","step":4.5,"vg":"","icon":"triceps_overhead","tech":"","arch":0},{"id":"e07","name":"Подъём на носки стоя","group":"Икроножная","load":"stack","metric":"reps","step":2.5,"vg":"","icon":"calf_standing","tech":"","arch":0},{"id":"e08","name":"Тяга штанги в наклоне, статично","group":"Широчайшие","load":"barbell","metric":"reps","step":2.5,"vg":"","icon":"row_barbell","tech":"Корпус под 45°, спина прямая, хват чуть шире плеч. Тянешь к низу живота, локти вдоль корпуса, без рывка поясницей и без читинга весом тела.","arch":0},{"id":"e09","name":"Тяга верхнего блока широким хватом","group":"Широчайшие","load":"stack","metric":"reps","step":4.5,"vg":"","icon":"pulldown","tech":"","arch":0},{"id":"e10","name":"Шраги со штангой","group":"Верхняя трапеция","load":"barbell","metric":"reps","step":2.5,"vg":"","icon":"shrug","tech":"Штанга у бёдер, тянешь плечи строго вверх к ушам, без вращения плечами по кругу. Пауза вверху секунда.","arch":0},{"id":"e11","name":"Тяга к лицу на канате","group":"Задняя дельта","load":"stack","metric":"reps","step":4.5,"vg":"","icon":"face_pull","tech":"Канат на уровне лица, тянешь к переносице, локти уходят в стороны и назад, кисти разворачиваются наружу в конце движения.","arch":0},{"id":"e12","name":"Махи гантелями в наклоне","group":"Задняя дельта","load":"dumbbell","metric":"reps","step":1,"vg":"","icon":"rear_delt_bent","tech":"","arch":0},{"id":"e13","name":"Подъём штанги на бицепс","group":"Бицепс","load":"barbell","metric":"reps","step":2.5,"vg":"","icon":"bicep_curl","tech":"","arch":0},{"id":"e14","name":"Сгибание запястий со штангой","group":"Предплечье","load":"barbell","metric":"reps","step":1,"vg":"","icon":"wrist_curl","tech":"","arch":0},{"id":"e15","name":"Разгибание запястий с гантелями","group":"Предплечье","load":"dumbbell","metric":"reps","step":1,"vg":"","icon":"wrist_extension","tech":"","arch":0},{"id":"e16","name":"Жим ногами в тренажёре","group":"Квадрицепс","load":"stack","metric":"reps","step":10,"vg":"","icon":"leg_press","tech":"","arch":0},{"id":"e17","name":"Разгибание ног в тренажёре","group":"Квадрицепс","load":"stack","metric":"reps","step":4.5,"vg":"","icon":"leg_extension","tech":"","arch":0},{"id":"e18","name":"Сгибание ног в тренажёре","group":"Бицепс бедра","load":"stack","metric":"reps","step":4.5,"vg":"","icon":"leg_curl","tech":"","arch":0},{"id":"e19","name":"Нордические сгибания (эксцентрика)","group":"Бицепс бедра","load":"bodyweight","metric":"reps","step":2.5,"vg":"","icon":"nordic_curl","tech":"Колени закреплены, корпус прямой. Медленно наклоняешься вперёд, тормозя движение бицепсом бедра, пока не придётся опереться руками об пол.","arch":0},{"id":"e20","name":"Приводящие/отводящие в тренажёре","group":"Стабилизаторы таза","load":"stack","metric":"reps","step":5,"vg":"","icon":"hip_machine","tech":"","arch":0},{"id":"e21","name":"Подъём на носки сидя","group":"Камбаловидная","load":"stack","metric":"reps","step":5,"vg":"","icon":"calf_seated","tech":"","arch":0}],"complexes":[{"key":"A","name":"Жим","sub":"грудь · плечи · трицепс · икры","warm":"Гребной тренажёр или велосипед 4 минуты в лёгком темпе. 10 отжиманий от пола, пустой гриф жимом лёжа 15 повторов, 2 подхода наружной ротации плеча с резиной по 15, 10 круговых вращений руками.","items":[{"ex":"e01","sets":4,"rmin":6,"rmax":8,"rest":150,"grp":""},{"ex":"e02","sets":3,"rmin":8,"rmax":10,"rest":120,"grp":""},{"ex":"e03","sets":3,"rmin":8,"rmax":10,"rest":120,"grp":""},{"ex":"e04","sets":5,"rmin":12,"rmax":15,"rest":105,"grp":""},{"ex":"e05","sets":2,"rmin":12,"rmax":15,"rest":90,"grp":""},{"ex":"e06","sets":3,"rmin":10,"rmax":12,"rest":90,"grp":""},{"ex":"e07","sets":4,"rmin":10,"rmax":15,"rest":75,"grp":""}]},{"key":"B","name":"Тяга","sub":"спина · трапеции · задняя дельта · бицепс · предплечья","warm":"Гребной тренажёр или велосипед 4 минуты в лёгком темпе. 10 круговых вращений плечами вперёд и назад, 10 отжиманий от пола, подход тяги верхнего блока пустым весом на 15 повторов, 2 подхода наружной ротации плеча с резиной по 15.","items":[{"ex":"e08","sets":4,"rmin":6,"rmax":8,"rest":150,"grp":""},{"ex":"e09","sets":3,"rmin":8,"rmax":10,"rest":120,"grp":""},{"ex":"e10","sets":4,"rmin":10,"rmax":12,"rest":90,"grp":""},{"ex":"e11","sets":4,"rmin":12,"rmax":15,"rest":90,"grp":""},{"ex":"e12","sets":3,"rmin":12,"rmax":15,"rest":90,"grp":""},{"ex":"e13","sets":3,"rmin":8,"rmax":10,"rest":90,"grp":""},{"ex":"e14","sets":2,"rmin":15,"rmax":20,"rest":60,"grp":""},{"ex":"e15","sets":2,"rmin":15,"rmax":20,"rest":60,"grp":""}]},{"key":"C","name":"Ноги","sub":"ноги · икры · камбаловидная","warm":"Велотренажёр 4 минуты в лёгком темпе. 10 круговых вращений тазобедренным суставом в каждую сторону, 15 неглубоких приседаний у стены с собственным весом, 10 подъёмов на носки без веса.","items":[{"ex":"e16","sets":4,"rmin":8,"rmax":10,"rest":150,"grp":""},{"ex":"e17","sets":3,"rmin":12,"rmax":15,"rest":90,"grp":""},{"ex":"e18","sets":4,"rmin":10,"rmax":12,"rest":120,"grp":""},{"ex":"e19","sets":3,"rmin":6,"rmax":8,"rest":120,"grp":""},{"ex":"e20","sets":2,"rmin":15,"rmax":15,"rest":60,"grp":""},{"ex":"e07","sets":3,"rmin":10,"rmax":15,"rest":75,"grp":""},{"ex":"e21","sets":3,"rmin":12,"rmax":15,"rest":75,"grp":""}]}],"cycle":3,"cfg":{"wStartDate":"2026-10-27","wStart":80.0,"paceMin":0.2,"paceMax":0.3}};
+const ICONS = {"bench_flat":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"8\" y=\"68\" width=\"54\" height=\"9\" rx=\"2.5\" fill=\"#dde5ef\"/><line x1=\"12\" y1=\"28\" x2=\"44\" y2=\"28\" stroke=\"#4a6fa0\" stroke-width=\"3.2\"/><circle cx=\"12\" cy=\"28\" r=\"3\" fill=\"#4a6fa0\"/><circle cx=\"44\" cy=\"28\" r=\"3\" fill=\"#4a6fa0\"/><g opacity=\"0.9\"><line x1=\"26.0\" y1=\"68.0\" x2=\"54.0\" y2=\"68.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"22.8\" y1=\"68.0\" x2=\"26.0\" y2=\"68.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"16.0\" cy=\"68.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"26.0\" y1=\"68.0\" x2=\"28.0\" y2=\"56.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"28.0\" y1=\"56.0\" x2=\"30.0\" y2=\"42.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"30.0\" cy=\"42.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"54.0\" y1=\"68.0\" x2=\"62.0\" y2=\"60.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"62.0\" y1=\"60.0\" x2=\"70.0\" y2=\"72.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"26.0\" y1=\"68.0\" x2=\"54.0\" y2=\"68.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"22.8\" y1=\"68.0\" x2=\"26.0\" y2=\"68.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"16.0\" cy=\"68.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"26.0\" y1=\"68.0\" x2=\"28.0\" y2=\"56.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"28.0\" y1=\"56.0\" x2=\"26.0\" y2=\"28.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"26.0\" cy=\"28.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"54.0\" y1=\"68.0\" x2=\"62.0\" y2=\"60.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"62.0\" y1=\"60.0\" x2=\"70.0\" y2=\"72.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"31.0\" y1=\"41.0\" x2=\"27.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"27.0,30.0 30.1,33.3 26.8,34.5\" fill=\"#2a4d7a\"/><\/svg>","bench_incline":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"12\" y=\"40\" width=\"26\" height=\"40\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"30.0\" y1=\"64.0\" x2=\"58.0\" y2=\"76.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"28.1\" y1=\"63.0\" x2=\"30.0\" y2=\"64.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"22.0\" cy=\"60.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"30.0\" y1=\"64.0\" x2=\"32.0\" y2=\"50.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"32.0\" y1=\"50.0\" x2=\"34.0\" y2=\"37.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"34.0\" cy=\"37.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"58.0\" y1=\"76.0\" x2=\"66.0\" y2=\"67.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"66.0\" y1=\"67.0\" x2=\"74.0\" y2=\"78.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"30.0\" y1=\"64.0\" x2=\"58.0\" y2=\"76.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"28.1\" y1=\"63.0\" x2=\"30.0\" y2=\"64.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"22.0\" cy=\"60.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"30.0\" y1=\"64.0\" x2=\"32.0\" y2=\"50.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"32.0\" y1=\"50.0\" x2=\"27.0\" y2=\"26.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"27.0\" cy=\"26.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"58.0\" y1=\"76.0\" x2=\"66.0\" y2=\"67.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"66.0\" y1=\"67.0\" x2=\"74.0\" y2=\"78.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"34.0\" y1=\"37.0\" x2=\"28.0\" y2=\"27.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"28.0,27.0 31.6,29.7 28.6,31.5\" fill=\"#2a4d7a\"/><\/svg>","seated_press":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"30\" y=\"58\" width=\"18\" height=\"24\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"42.0\" y1=\"36.0\" x2=\"42.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"34.8\" x2=\"42.0\" y2=\"36.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"42.0\" cy=\"28.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"42.0\" y1=\"36.0\" x2=\"56.0\" y2=\"42.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"56.0\" y1=\"42.0\" x2=\"60.0\" y2=\"32.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"60.0\" cy=\"32.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"42.0\" y1=\"58.0\" x2=\"54.0\" y2=\"64.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"54.0\" y1=\"64.0\" x2=\"50.0\" y2=\"80.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"42.0\" y1=\"36.0\" x2=\"42.0\" y2=\"58.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"34.8\" x2=\"42.0\" y2=\"36.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"42.0\" cy=\"28.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"42.0\" y1=\"36.0\" x2=\"56.0\" y2=\"28.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"56.0\" y1=\"28.0\" x2=\"60.0\" y2=\"10.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"60.0\" cy=\"10.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"42.0\" y1=\"58.0\" x2=\"54.0\" y2=\"64.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"54.0\" y1=\"64.0\" x2=\"50.0\" y2=\"80.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"60.0\" y1=\"31.0\" x2=\"60.0\" y2=\"13.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"60.0,13.0 61.8,17.1 58.2,17.1\" fill=\"#2a4d7a\"/><\/svg>","lateral_raise":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"30.0\" x2=\"45.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"26.8\" x2=\"45.0\" y2=\"30.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"20.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"30.0\" x2=\"49.0\" y2=\"46.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"49.0\" y1=\"46.0\" x2=\"52.0\" y2=\"56.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"52.0\" cy=\"56.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"40.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"74.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"50.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"74.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"45.0\" y1=\"30.0\" x2=\"45.0\" y2=\"58.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"26.8\" x2=\"45.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"20.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"45.0\" y1=\"30.0\" x2=\"65.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"65.0\" y1=\"30.0\" x2=\"80.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"80.0\" cy=\"30.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"40.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"74.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"50.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"74.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"54.0\" y1=\"53.0\" x2=\"76.0\" y2=\"32.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"76.0,32.0 74.2,36.1 71.8,33.6\" fill=\"#2a4d7a\"/><\/svg>","crossover":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><line x1=\"83\" y1=\"6\" x2=\"83\" y2=\"36\" stroke=\"#9fb3cc\" stroke-width=\"2\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"30.0\" x2=\"45.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"26.8\" x2=\"45.0\" y2=\"30.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"20.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"30.0\" x2=\"64.0\" y2=\"26.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"64.0\" y1=\"26.0\" x2=\"80.0\" y2=\"20.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"80.0\" cy=\"20.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"40.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"74.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"50.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"74.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"45.0\" y1=\"30.0\" x2=\"45.0\" y2=\"58.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"26.8\" x2=\"45.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"20.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"45.0\" y1=\"30.0\" x2=\"52.0\" y2=\"34.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"52.0\" y1=\"34.0\" x2=\"44.0\" y2=\"40.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"44.0\" cy=\"40.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"40.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"74.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"50.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"74.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"78.0\" y1=\"21.0\" x2=\"46.0\" y2=\"39.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"46.0,39.0 48.8,35.4 50.5,38.5\" fill=\"#2a4d7a\"/><\/svg>","triceps_overhead":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"60.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"28.8\" x2=\"45.0\" y2=\"32.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"32.0\" x2=\"54.0\" y2=\"18.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"54.0\" y1=\"18.0\" x2=\"60.0\" y2=\"38.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"60.0\" cy=\"38.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"40.0\" y2=\"76.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"76.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"50.0\" y2=\"76.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"76.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"60.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"28.8\" x2=\"45.0\" y2=\"32.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"45.0\" y1=\"32.0\" x2=\"54.0\" y2=\"18.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"54.0\" y1=\"18.0\" x2=\"58.0\" y2=\"8.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"58.0\" cy=\"8.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"40.0\" y2=\"76.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"76.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"50.0\" y2=\"76.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"76.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"60.0\" y1=\"36.0\" x2=\"58.0\" y2=\"11.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"58.0,11.0 60.1,15.0 56.6,15.3\" fill=\"#2a4d7a\"/><\/svg>","calf_standing":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"28.8\" x2=\"45.0\" y2=\"32.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"44.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"44.0\" x2=\"45.0\" y2=\"54.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"54.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"43.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"43.0\" y1=\"74.0\" x2=\"43.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"43.0\" y1=\"28.0\" x2=\"43.0\" y2=\"54.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"43.0\" y1=\"24.8\" x2=\"43.0\" y2=\"28.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"43.0\" cy=\"18.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"43.0\" y1=\"28.0\" x2=\"43.0\" y2=\"40.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"43.0\" y1=\"40.0\" x2=\"43.0\" y2=\"50.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"43.0\" cy=\"50.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"43.0\" y1=\"54.0\" x2=\"42.0\" y2=\"70.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"70.0\" x2=\"50.0\" y2=\"84.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"44.0\" y1=\"86.0\" x2=\"50.0\" y2=\"80.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"50.0,80.0 48.3,84.2 45.8,81.7\" fill=\"#2a4d7a\"/><\/svg>","row_barbell":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"24.0\" y1=\"36.0\" x2=\"56.0\" y2=\"50.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"22.1\" y1=\"35.0\" x2=\"24.0\" y2=\"36.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"16.0\" cy=\"32.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"24.0\" y1=\"36.0\" x2=\"28.0\" y2=\"48.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"28.0\" y1=\"48.0\" x2=\"30.0\" y2=\"62.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"30.0\" cy=\"62.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"56.0\" y1=\"50.0\" x2=\"64.0\" y2=\"66.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"64.0\" y1=\"66.0\" x2=\"72.0\" y2=\"84.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"24.0\" y1=\"36.0\" x2=\"56.0\" y2=\"50.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"22.1\" y1=\"35.0\" x2=\"24.0\" y2=\"36.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"16.0\" cy=\"32.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"24.0\" y1=\"36.0\" x2=\"24.0\" y2=\"46.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"24.0\" y1=\"46.0\" x2=\"24.0\" y2=\"50.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"24.0\" cy=\"50.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"56.0\" y1=\"50.0\" x2=\"64.0\" y2=\"66.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"64.0\" y1=\"66.0\" x2=\"72.0\" y2=\"84.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"30.0\" y1=\"60.0\" x2=\"25.0\" y2=\"51.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"25.0,51.0 28.5,53.8 25.5,55.5\" fill=\"#2a4d7a\"/><\/svg>","pulldown":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"34\" y=\"60\" width=\"16\" height=\"22\" rx=\"2.5\" fill=\"#dde5ef\"/><line x1=\"62\" y1=\"4\" x2=\"62\" y2=\"12\" stroke=\"#9fb3cc\" stroke-width=\"2\"/><g opacity=\"0.9\"><line x1=\"42.0\" y1=\"34.0\" x2=\"42.0\" y2=\"60.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"30.8\" x2=\"42.0\" y2=\"34.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"42.0\" cy=\"24.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"42.0\" y1=\"34.0\" x2=\"54.0\" y2=\"22.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"54.0\" y1=\"22.0\" x2=\"62.0\" y2=\"12.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"62.0\" cy=\"12.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"42.0\" y1=\"60.0\" x2=\"50.0\" y2=\"66.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"66.0\" x2=\"50.0\" y2=\"80.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"42.0\" y1=\"34.0\" x2=\"42.0\" y2=\"60.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"30.8\" x2=\"42.0\" y2=\"34.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"42.0\" cy=\"24.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"42.0\" y1=\"34.0\" x2=\"52.0\" y2=\"32.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"52.0\" y1=\"32.0\" x2=\"56.0\" y2=\"40.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"56.0\" cy=\"40.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"42.0\" y1=\"60.0\" x2=\"50.0\" y2=\"66.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"66.0\" x2=\"50.0\" y2=\"80.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"62.0\" y1=\"14.0\" x2=\"57.0\" y2=\"38.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"57.0,38.0 56.1,33.6 59.6,34.3\" fill=\"#2a4d7a\"/><\/svg>","shrug":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"28.8\" x2=\"45.0\" y2=\"32.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"44.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"44.0\" x2=\"45.0\" y2=\"56.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"56.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"40.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"74.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"50.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"74.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"45.0\" y1=\"26.0\" x2=\"45.0\" y2=\"58.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"23.8\" x2=\"45.0\" y2=\"26.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"17.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"45.0\" y1=\"26.0\" x2=\"45.0\" y2=\"40.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"40.0\" x2=\"45.0\" y2=\"52.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"52.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"40.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"74.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"58.0\" x2=\"50.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"74.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"52.0\" y1=\"30.0\" x2=\"52.0\" y2=\"19.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"52.0,19.0 53.8,23.1 50.2,23.1\" fill=\"#2a4d7a\"/><\/svg>","face_pull":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"42.0\" y1=\"30.0\" x2=\"42.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"26.8\" x2=\"42.0\" y2=\"30.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"42.0\" cy=\"20.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"42.0\" y1=\"30.0\" x2=\"58.0\" y2=\"28.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"58.0\" y1=\"28.0\" x2=\"76.0\" y2=\"20.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"76.0\" cy=\"20.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"42.0\" y1=\"58.0\" x2=\"37.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"37.0\" y1=\"74.0\" x2=\"34.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"58.0\" x2=\"47.0\" y2=\"74.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"47.0\" y1=\"74.0\" x2=\"50.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"42.0\" y1=\"30.0\" x2=\"42.0\" y2=\"58.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"26.8\" x2=\"42.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"42.0\" cy=\"20.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"42.0\" y1=\"30.0\" x2=\"56.0\" y2=\"22.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"56.0\" y1=\"22.0\" x2=\"48.0\" y2=\"16.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"48.0\" cy=\"16.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"42.0\" y1=\"58.0\" x2=\"37.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"37.0\" y1=\"74.0\" x2=\"34.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"42.0\" y1=\"58.0\" x2=\"47.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"47.0\" y1=\"74.0\" x2=\"50.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"74.0\" y1=\"21.0\" x2=\"50.0\" y2=\"17.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"50.0,17.0 54.4,16.0 53.8,19.4\" fill=\"#2a4d7a\"/><\/svg>","rear_delt_bent":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"24.0\" y1=\"34.0\" x2=\"56.0\" y2=\"48.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"22.1\" y1=\"33.0\" x2=\"24.0\" y2=\"34.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"16.0\" cy=\"30.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"24.0\" y1=\"34.0\" x2=\"28.0\" y2=\"44.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"28.0\" y1=\"44.0\" x2=\"30.0\" y2=\"56.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"30.0\" cy=\"56.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"56.0\" y1=\"48.0\" x2=\"64.0\" y2=\"64.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"64.0\" y1=\"64.0\" x2=\"72.0\" y2=\"84.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"24.0\" y1=\"34.0\" x2=\"56.0\" y2=\"48.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"22.1\" y1=\"33.0\" x2=\"24.0\" y2=\"34.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"16.0\" cy=\"30.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"24.0\" y1=\"34.0\" x2=\"22.0\" y2=\"22.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"22.0\" y1=\"22.0\" x2=\"20.0\" y2=\"12.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"20.0\" cy=\"12.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"56.0\" y1=\"48.0\" x2=\"64.0\" y2=\"64.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"64.0\" y1=\"64.0\" x2=\"72.0\" y2=\"84.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"30.0\" y1=\"54.0\" x2=\"21.0\" y2=\"16.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"21.0,16.0 23.7,19.6 20.3,20.4\" fill=\"#2a4d7a\"/><\/svg>","bicep_curl":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"60.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"28.8\" x2=\"45.0\" y2=\"32.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"32.0\" x2=\"48.0\" y2=\"44.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"48.0\" y1=\"44.0\" x2=\"52.0\" y2=\"60.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"52.0\" cy=\"60.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"40.0\" y2=\"76.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"76.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"50.0\" y2=\"76.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"76.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"45.0\" y1=\"32.0\" x2=\"45.0\" y2=\"60.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"28.8\" x2=\"45.0\" y2=\"32.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"45.0\" y1=\"32.0\" x2=\"48.0\" y2=\"44.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"48.0\" y1=\"44.0\" x2=\"56.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"56.0\" cy=\"30.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"40.0\" y2=\"76.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"40.0\" y1=\"76.0\" x2=\"37.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"50.0\" y2=\"76.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"50.0\" y1=\"76.0\" x2=\"53.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"52.0\" y1=\"58.0\" x2=\"55.0\" y2=\"33.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"55.0,33.0 56.2,37.3 52.8,36.9\" fill=\"#2a4d7a\"/><\/svg>","wrist_curl":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"14\" y=\"36\" width=\"34\" height=\"6\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"66.0\" y1=\"24.0\" x2=\"66.0\" y2=\"24.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"69.2\" y1=\"20.8\" x2=\"66.0\" y2=\"24.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"74.0\" cy=\"16.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"66.0\" y1=\"24.0\" x2=\"48.0\" y2=\"32.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"48.0\" y1=\"32.0\" x2=\"26.0\" y2=\"36.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"26.0\" cy=\"36.0\" r=\"2.38\" fill=\"#aebedb\"/><\/g><g opacity=\"1.0\"><line x1=\"66.0\" y1=\"24.0\" x2=\"66.0\" y2=\"24.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"69.2\" y1=\"20.8\" x2=\"66.0\" y2=\"24.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"74.0\" cy=\"16.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"66.0\" y1=\"24.0\" x2=\"48.0\" y2=\"32.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"48.0\" y1=\"32.0\" x2=\"26.0\" y2=\"24.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"26.0\" cy=\"24.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><\/g><line x1=\"26.0\" y1=\"38.0\" x2=\"26.0\" y2=\"26.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"26.0,26.0 27.8,30.1 24.2,30.1\" fill=\"#2a4d7a\"/><\/svg>","wrist_extension":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"14\" y=\"24\" width=\"34\" height=\"6\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"66.0\" y1=\"24.0\" x2=\"66.0\" y2=\"24.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"69.2\" y1=\"20.8\" x2=\"66.0\" y2=\"24.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"74.0\" cy=\"16.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"66.0\" y1=\"24.0\" x2=\"48.0\" y2=\"30.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"48.0\" y1=\"30.0\" x2=\"26.0\" y2=\"26.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"26.0\" cy=\"26.0\" r=\"2.38\" fill=\"#aebedb\"/><\/g><g opacity=\"1.0\"><line x1=\"66.0\" y1=\"24.0\" x2=\"66.0\" y2=\"24.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"69.2\" y1=\"20.8\" x2=\"66.0\" y2=\"24.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"74.0\" cy=\"16.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"66.0\" y1=\"24.0\" x2=\"48.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"48.0\" y1=\"30.0\" x2=\"26.0\" y2=\"38.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"26.0\" cy=\"38.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><\/g><line x1=\"26.0\" y1=\"24.0\" x2=\"26.0\" y2=\"36.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"26.0,36.0 24.2,31.9 27.8,31.9\" fill=\"#2a4d7a\"/><\/svg>","leg_press":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"8\" y=\"46\" width=\"22\" height=\"32\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"20.0\" y1=\"30.0\" x2=\"26.0\" y2=\"46.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"18.8\" y1=\"28.8\" x2=\"20.0\" y2=\"30.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"14.0\" cy=\"24.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"26.0\" y1=\"46.0\" x2=\"44.0\" y2=\"34.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"44.0\" y1=\"34.0\" x2=\"66.0\" y2=\"26.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"20.0\" y1=\"30.0\" x2=\"26.0\" y2=\"46.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"18.8\" y1=\"28.8\" x2=\"20.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"14.0\" cy=\"24.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"26.0\" y1=\"46.0\" x2=\"44.0\" y2=\"46.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"44.0\" y1=\"46.0\" x2=\"38.0\" y2=\"48.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"64.0\" y1=\"27.0\" x2=\"42.0\" y2=\"47.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"42.0,47.0 43.9,42.9 46.2,45.5\" fill=\"#2a4d7a\"/><\/svg>","leg_extension":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"6\" y=\"50\" width=\"26\" height=\"16\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"20.0\" y1=\"30.0\" x2=\"20.0\" y2=\"50.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"20.0\" y1=\"28.8\" x2=\"20.0\" y2=\"30.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"20.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"20.0\" y1=\"50.0\" x2=\"20.0\" y2=\"66.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"20.0\" y1=\"66.0\" x2=\"20.0\" y2=\"82.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"20.0\" y1=\"30.0\" x2=\"20.0\" y2=\"50.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"20.0\" y1=\"28.8\" x2=\"20.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"20.0\" cy=\"22.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"20.0\" y1=\"50.0\" x2=\"20.0\" y2=\"66.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"20.0\" y1=\"66.0\" x2=\"50.0\" y2=\"62.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"22.0\" y1=\"82.0\" x2=\"48.0\" y2=\"64.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"48.0,64.0 45.6,67.8 43.6,64.9\" fill=\"#2a4d7a\"/><\/svg>","leg_curl":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"8\" y=\"52\" width=\"58\" height=\"8\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"22.0\" y1=\"52.0\" x2=\"50.0\" y2=\"52.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"20.8\" y1=\"52.0\" x2=\"22.0\" y2=\"52.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"14.0\" cy=\"52.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"50.0\" y1=\"52.0\" x2=\"68.0\" y2=\"52.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"68.0\" y1=\"52.0\" x2=\"84.0\" y2=\"52.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"22.0\" y1=\"52.0\" x2=\"50.0\" y2=\"52.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"20.8\" y1=\"52.0\" x2=\"22.0\" y2=\"52.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"14.0\" cy=\"52.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"50.0\" y1=\"52.0\" x2=\"68.0\" y2=\"52.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"68.0\" y1=\"52.0\" x2=\"78.0\" y2=\"30.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"82.0\" y1=\"50.0\" x2=\"80.0\" y2=\"34.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"80.0,34.0 82.3,37.9 78.8,38.3\" fill=\"#2a4d7a\"/><\/svg>","nordic_curl":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"30.0\" x2=\"45.0\" y2=\"60.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"26.8\" x2=\"45.0\" y2=\"30.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"20.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"30.0\" x2=\"45.0\" y2=\"40.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"40.0\" x2=\"45.0\" y2=\"50.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"50.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"45.0\" y2=\"76.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"76.0\" x2=\"45.0\" y2=\"88.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"58.0\" y1=\"34.0\" x2=\"45.0\" y2=\"60.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"60.6\" y1=\"32.1\" x2=\"58.0\" y2=\"34.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"66.0\" cy=\"28.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"58.0\" y1=\"34.0\" x2=\"64.0\" y2=\"40.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"64.0\" y1=\"40.0\" x2=\"72.0\" y2=\"38.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"72.0\" cy=\"38.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"45.0\" y1=\"60.0\" x2=\"45.0\" y2=\"76.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"76.0\" x2=\"45.0\" y2=\"88.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"46.0\" y1=\"22.0\" x2=\"64.0\" y2=\"26.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"64.0,26.0 59.6,26.8 60.3,23.4\" fill=\"#2a4d7a\"/><\/svg>","hip_machine":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"36\" y=\"48\" width=\"18\" height=\"12\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"45.0\" y1=\"26.0\" x2=\"45.0\" y2=\"48.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"24.8\" x2=\"45.0\" y2=\"26.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"18.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"45.0\" y1=\"48.0\" x2=\"34.0\" y2=\"60.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"34.0\" y1=\"60.0\" x2=\"30.0\" y2=\"76.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"45.0\" y1=\"26.0\" x2=\"45.0\" y2=\"48.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"45.0\" y1=\"24.8\" x2=\"45.0\" y2=\"26.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"45.0\" cy=\"18.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"45.0\" y1=\"48.0\" x2=\"56.0\" y2=\"60.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"56.0\" y1=\"60.0\" x2=\"60.0\" y2=\"76.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"30.0\" y1=\"78.0\" x2=\"58.0\" y2=\"78.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"58.0,78.0 53.9,79.8 53.9,76.2\" fill=\"#2a4d7a\"/><\/svg>","calf_seated":"<svg viewBox=\"0 0 90 90\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"1\" y=\"1\" width=\"88\" height=\"88\" rx=\"10\" fill=\"#f2f5f9\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/><rect x=\"12\" y=\"58\" width=\"22\" height=\"18\" rx=\"2.5\" fill=\"#dde5ef\"/><g opacity=\"0.9\"><line x1=\"22.0\" y1=\"42.0\" x2=\"22.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"22.0\" y1=\"40.8\" x2=\"22.0\" y2=\"42.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"22.0\" cy=\"34.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#aebedb\" stroke-width=\"2.8\"/><line x1=\"22.0\" y1=\"42.0\" x2=\"30.0\" y2=\"52.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"30.0\" y1=\"52.0\" x2=\"40.0\" y2=\"56.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><circle cx=\"40.0\" cy=\"56.0\" r=\"2.38\" fill=\"#aebedb\"/><line x1=\"22.0\" y1=\"58.0\" x2=\"46.0\" y2=\"58.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><line x1=\"46.0\" y1=\"58.0\" x2=\"46.0\" y2=\"78.0\" stroke=\"#aebedb\" stroke-width=\"2.8\" stroke-linecap=\"round\"/><\/g><g opacity=\"1.0\"><line x1=\"22.0\" y1=\"42.0\" x2=\"22.0\" y2=\"58.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"22.0\" y1=\"40.8\" x2=\"22.0\" y2=\"42.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"22.0\" cy=\"34.0\" r=\"6.8\" fill=\"#f2f5f9\" stroke=\"#2a4d7a\" stroke-width=\"3.4\"/><line x1=\"22.0\" y1=\"42.0\" x2=\"30.0\" y2=\"52.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"30.0\" y1=\"52.0\" x2=\"40.0\" y2=\"56.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><circle cx=\"40.0\" cy=\"56.0\" r=\"2.8899999999999997\" fill=\"#2a4d7a\"/><line x1=\"22.0\" y1=\"58.0\" x2=\"46.0\" y2=\"58.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><line x1=\"46.0\" y1=\"58.0\" x2=\"52.0\" y2=\"74.0\" stroke=\"#2a4d7a\" stroke-width=\"3.4\" stroke-linecap=\"round\"/><\/g><line x1=\"46.0\" y1=\"77.0\" x2=\"52.0\" y2=\"73.0\" stroke=\"#2a4d7a\" stroke-width=\"1.6\" stroke-dasharray=\"2,2\" opacity=\"0.8\"/><polygon points=\"52.0,73.0 49.5,76.8 47.6,73.8\" fill=\"#2a4d7a\"/><\/svg>"};
+const BIG = {"bench_flat":"<svg viewBox=\"0 0 240 200\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Arial, Helvetica, sans-serif\">\n<defs>\n<linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f7f9fc\"/><stop offset=\"1\" stop-color=\"#e6edf6\"/><\/linearGradient>\n<radialGradient id=\"glow\"><stop offset=\"0\" stop-color=\"#ee6c3b\" stop-opacity=\"0.95\"/><stop offset=\"0.6\" stop-color=\"#ee6c3b\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#ee6c3b\" stop-opacity=\"0\"/><\/radialGradient>\n\n<\/defs>\n<rect x=\"1\" y=\"1\" width=\"238\" height=\"198\" rx=\"14\" fill=\"url(#bg)\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/>\n<rect x=\"8\" y=\"176\" width=\"224\" height=\"3\" rx=\"1.5\" fill=\"#cfd9e6\"/><rect x=\"58\" y=\"52\" width=\"7\" height=\"124\" rx=\"2\" fill=\"#c3cfdf\"/><rect x=\"52\" y=\"170\" width=\"19\" height=\"6\" rx=\"2\" fill=\"#aebbd0\"/><path d=\"M61.5,84 h14 v5 h-9 v4 h-5z\" fill=\"#8392a6\" stroke=\"#4b5a6e\" stroke-width=\"1\"/><rect x=\"76\" y=\"150\" width=\"6\" height=\"26\" fill=\"#8392a6\"/><rect x=\"172\" y=\"150\" width=\"6\" height=\"26\" fill=\"#8392a6\"/><rect x=\"68\" y=\"172\" width=\"22\" height=\"5\" rx=\"2\" fill=\"#4b5a6e\"/><rect x=\"160\" y=\"172\" width=\"30\" height=\"5\" rx=\"2\" fill=\"#4b5a6e\"/><rect x=\"62\" y=\"148\" width=\"128\" height=\"6\" fill=\"#4b5a6e\"/><rect x=\"56\" y=\"138\" width=\"140\" height=\"13\" rx=\"6\" fill=\"#4a6fa0\" stroke=\"#1f3a5c\" stroke-width=\"2\"/><rect x=\"62\" y=\"140\" width=\"128\" height=\"3\" rx=\"1.5\" fill=\"#6f92c1\" opacity=\".7\"/><g opacity=\"1.0\"><polygon points=\"150.6,137.9 191.0,139.9 193.0,124.1 153.4,116.1\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"152.0\" cy=\"127.0\" r=\"11.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"192.0\" cy=\"132.0\" r=\"8.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"184.8,128.4 171.2,161.6 180.8,166.4 199.2,135.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"192.0\" cy=\"132.0\" r=\"8.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"176.0\" cy=\"164.0\" r=\"5.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"150.9,140.0 175.0,140.5 177.0,117.5 153.1,114.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"152.0\" cy=\"127.0\" r=\"13.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"176.0\" cy=\"129.0\" r=\"11.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"169.0,163.0 192.0,170.0 192.0,175.0 169.0,175.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"191.0\" cy=\"172.5\" r=\"3.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"98.0,112.0 152.0,115.0 152.0,138.0 98.0,140.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"100.0\" cy=\"126.0\" r=\"14.2\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"152.0\" cy=\"126.5\" r=\"12.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"92.0,119.8 85.0,120.2 85.0,129.8 92.0,130.2\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"92.0\" cy=\"125.0\" r=\"5.2\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"85.0\" cy=\"125.0\" r=\"4.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"76.0\" cy=\"125.0\" r=\"12.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"150.6,137.9 191.0,139.9 193.0,124.1 153.4,116.1\" fill=\"#f0c6a0\" /><circle cx=\"152.0\" cy=\"127.0\" r=\"11.0\" fill=\"#f0c6a0\" /><circle cx=\"192.0\" cy=\"132.0\" r=\"8.0\" fill=\"#f0c6a0\" /><polygon points=\"184.8,128.4 171.2,161.6 180.8,166.4 199.2,135.6\" fill=\"#f0c6a0\" /><circle cx=\"192.0\" cy=\"132.0\" r=\"8.0\" fill=\"#f0c6a0\" /><circle cx=\"176.0\" cy=\"164.0\" r=\"5.4\" fill=\"#f0c6a0\" /><polygon points=\"150.9,140.0 175.0,140.5 177.0,117.5 153.1,114.0\" fill=\"#17283f\" /><circle cx=\"152.0\" cy=\"127.0\" r=\"13.0\" fill=\"#17283f\" /><circle cx=\"176.0\" cy=\"129.0\" r=\"11.5\" fill=\"#17283f\" /><polygon points=\"169.0,163.0 192.0,170.0 192.0,175.0 169.0,175.0\" fill=\"#f4f6fa\" /><circle cx=\"191.0\" cy=\"172.5\" r=\"3.0\" fill=\"#f4f6fa\" /><polygon points=\"98.0,112.0 152.0,115.0 152.0,138.0 98.0,140.0\" fill=\"#2a4d7a\" /><circle cx=\"100.0\" cy=\"126.0\" r=\"14.2\" fill=\"#2a4d7a\" /><circle cx=\"152.0\" cy=\"126.5\" r=\"12.0\" fill=\"#2a4d7a\" /><polygon points=\"92.0,119.8 85.0,120.2 85.0,129.8 92.0,130.2\" fill=\"#f0c6a0\" /><circle cx=\"92.0\" cy=\"125.0\" r=\"5.2\" fill=\"#f0c6a0\" /><circle cx=\"85.0\" cy=\"125.0\" r=\"4.8\" fill=\"#f0c6a0\" /><circle cx=\"76.0\" cy=\"125.0\" r=\"12.0\" fill=\"#f0c6a0\" /><\/g><path d=\"M64,125 A12,12 0 0 1 79,113.4 Q70,120 71,133 A12,12 0 0 1 64,125 Z\" fill=\"#3a2d26\"/><g opacity=\".55\"><circle cx=\"112\" cy=\"110\" r=\"21\" fill=\"none\" stroke=\"#7f95b3\" stroke-width=\"1.6\" stroke-dasharray=\"3,2.4\"/><\/g><g opacity=\"0.95\"><polygon points=\"98.5,129.7 107.5,141.0 116.5,135.0 109.5,122.3\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"104.0\" cy=\"126.0\" r=\"6.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"112.0\" cy=\"138.0\" r=\"5.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"117.4,138.0 116.4,114.0 107.6,114.0 106.6,138.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"112.0\" cy=\"138.0\" r=\"5.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"112.0\" cy=\"114.0\" r=\"4.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"98.5,129.7 107.5,141.0 116.5,135.0 109.5,122.3\" fill=\"#dfe7f2\" /><circle cx=\"104.0\" cy=\"126.0\" r=\"6.6\" fill=\"#dfe7f2\" /><circle cx=\"112.0\" cy=\"138.0\" r=\"5.4\" fill=\"#dfe7f2\" /><polygon points=\"117.4,138.0 116.4,114.0 107.6,114.0 106.6,138.0\" fill=\"#dfe7f2\" /><circle cx=\"112.0\" cy=\"138.0\" r=\"5.4\" fill=\"#dfe7f2\" /><circle cx=\"112.0\" cy=\"114.0\" r=\"4.4\" fill=\"#dfe7f2\" /><\/g><ellipse cx=\"112.0\" cy=\"118.0\" rx=\"24.0\" ry=\"12.0\" transform=\"rotate(-6.0 112.0 118.0)\" fill=\"url(#glow)\" style=\"mix-blend-mode:normal\"/><g opacity=\"1.0\"><polygon points=\"110.8,126.8 112.8,100.7 101.2,99.3 97.2,125.2\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"104.0\" cy=\"126.0\" r=\"6.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"107.0\" cy=\"100.0\" r=\"5.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"112.8,100.2 112.6,74.2 103.4,73.8 101.2,99.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"107.0\" cy=\"100.0\" r=\"5.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"108.0\" cy=\"74.0\" r=\"4.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"108.0\" cy=\"74.0\" r=\"5.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"110.8,126.8 112.8,100.7 101.2,99.3 97.2,125.2\" fill=\"#f0c6a0\" /><circle cx=\"104.0\" cy=\"126.0\" r=\"6.8\" fill=\"#f0c6a0\" /><circle cx=\"107.0\" cy=\"100.0\" r=\"5.8\" fill=\"#f0c6a0\" /><polygon points=\"112.8,100.2 112.6,74.2 103.4,73.8 101.2,99.8\" fill=\"#f0c6a0\" /><circle cx=\"107.0\" cy=\"100.0\" r=\"5.8\" fill=\"#f0c6a0\" /><circle cx=\"108.0\" cy=\"74.0\" r=\"4.6\" fill=\"#f0c6a0\" /><circle cx=\"108.0\" cy=\"74.0\" r=\"5.0\" fill=\"#f0c6a0\" /><\/g><circle cx=\"108.0\" cy=\"72.0\" r=\"21\" fill=\"#34404f\" stroke=\"#1f3a5c\" stroke-width=\"2\"/><circle cx=\"108.0\" cy=\"72.0\" r=\"16.4\" fill=\"none\" stroke=\"#56667b\" stroke-width=\"1.4\"/><circle cx=\"108.0\" cy=\"72.0\" r=\"4.6\" fill=\"#8392a6\" stroke=\"#1f3a5c\" stroke-width=\"1.2\"/><circle cx=\"108\" cy=\"72\" r=\"5.2\" fill=\"#f0c6a0\" stroke=\"#1f3a5c\" stroke-width=\"1.6\"/><path d=\"M134.0,104.0 Q129.5,96.4 132.0,88.0\" fill=\"none\" stroke=\"#ee6c3b\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-dasharray=\"1,5.2\"/><polygon points=\"132.0,88.0 126.7,93.3 133.6,95.3\" fill=\"#ee6c3b\"/>\n<g>\n<rect x=\"10\" y=\"10\" width=\"46.0\" height=\"17\" rx=\"8.5\" fill=\"#1f3a5c\"/>\n<text x=\"33.0\" y=\"22\" font-size=\"8.8\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\">ГРУДЬ<\/text>\n<\/g>\n<g>\n<circle cx=\"17\" cy=\"187\" r=\"4.6\" fill=\"#ee6c3b\"/>\n<text x=\"26\" y=\"190.4\" font-size=\"9\" fill=\"#44546a\" font-weight=\"600\">Жим лёжа: локти ~45–60°<\/text>\n<\/g>\n<\/svg>","lateral_raise":"<svg viewBox=\"0 0 240 200\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Arial, Helvetica, sans-serif\">\n<defs>\n<linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f7f9fc\"/><stop offset=\"1\" stop-color=\"#e6edf6\"/><\/linearGradient>\n<radialGradient id=\"glow\"><stop offset=\"0\" stop-color=\"#ee6c3b\" stop-opacity=\"0.95\"/><stop offset=\"0.6\" stop-color=\"#ee6c3b\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#ee6c3b\" stop-opacity=\"0\"/><\/radialGradient>\n\n<\/defs>\n<rect x=\"1\" y=\"1\" width=\"238\" height=\"198\" rx=\"14\" fill=\"url(#bg)\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/>\n<ellipse cx=\"120\" cy=\"178\" rx=\"46\" ry=\"5\" fill=\"#cfd9e6\"/><g opacity=\"0.9\"><polygon points=\"92.5,64.0 85.6,90.4 96.4,93.6 105.5,68.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"99.0\" cy=\"66.0\" r=\"6.8\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"91.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"85.4,92.5 88.6,116.4 97.4,115.6 96.6,91.5\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"91.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"93.0\" cy=\"116.0\" r=\"4.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"93.0\" cy=\"116.0\" r=\"4.8\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"134.5,68.0 143.6,93.6 154.4,90.4 147.5,64.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"141.0\" cy=\"66.0\" r=\"6.8\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"149.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"143.4,91.5 142.6,115.6 151.4,116.4 154.6,92.5\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"149.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"147.0\" cy=\"116.0\" r=\"4.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"147.0\" cy=\"116.0\" r=\"4.8\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"92.5,64.0 85.6,90.4 96.4,93.6 105.5,68.0\" fill=\"#dfe7f2\" /><circle cx=\"99.0\" cy=\"66.0\" r=\"6.8\" fill=\"#dfe7f2\" /><circle cx=\"91.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" /><polygon points=\"85.4,92.5 88.6,116.4 97.4,115.6 96.6,91.5\" fill=\"#dfe7f2\" /><circle cx=\"91.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" /><circle cx=\"93.0\" cy=\"116.0\" r=\"4.4\" fill=\"#dfe7f2\" /><circle cx=\"93.0\" cy=\"116.0\" r=\"4.8\" fill=\"#dfe7f2\" /><polygon points=\"134.5,68.0 143.6,93.6 154.4,90.4 147.5,64.0\" fill=\"#dfe7f2\" /><circle cx=\"141.0\" cy=\"66.0\" r=\"6.8\" fill=\"#dfe7f2\" /><circle cx=\"149.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" /><polygon points=\"143.4,91.5 142.6,115.6 151.4,116.4 154.6,92.5\" fill=\"#dfe7f2\" /><circle cx=\"149.0\" cy=\"92.0\" r=\"5.6\" fill=\"#dfe7f2\" /><circle cx=\"147.0\" cy=\"116.0\" r=\"4.4\" fill=\"#dfe7f2\" /><circle cx=\"147.0\" cy=\"116.0\" r=\"4.8\" fill=\"#dfe7f2\" /><\/g><polygon points=\"98.4,119.1 93.0,122.2 87.6,119.1 87.6,112.9 93.0,109.8 98.4,112.9\" fill=\"#aebbd0\" stroke=\"#1f3a5c\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><circle cx=\"93.0\" cy=\"116.0\" r=\"2.4\" fill=\"#8392a6\"/><polygon points=\"152.4,119.1 147.0,122.2 141.6,119.1 141.6,112.9 147.0,109.8 152.4,112.9\" fill=\"#aebbd0\" stroke=\"#1f3a5c\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><circle cx=\"147.0\" cy=\"116.0\" r=\"2.4\" fill=\"#8392a6\"/><g opacity=\"1\"><polygon points=\"100.5,113.4 101.0,145.6 115.0,146.4 119.5,114.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"110.0\" cy=\"114.0\" r=\"9.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"108.0\" cy=\"146.0\" r=\"7.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"101.0,145.7 102.0,172.8 112.0,173.2 115.0,146.3\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"108.0\" cy=\"146.0\" r=\"7.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"107.0\" cy=\"173.0\" r=\"5.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"120.5,114.6 125.0,146.4 139.0,145.6 139.5,113.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"130.0\" cy=\"114.0\" r=\"9.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"132.0\" cy=\"146.0\" r=\"7.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"125.0,146.3 128.0,173.2 138.0,172.8 139.0,145.7\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"132.0\" cy=\"146.0\" r=\"7.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"133.0\" cy=\"173.0\" r=\"5.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"99.0,113.3 99.5,129.4 118.5,130.6 121.0,114.7\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"110.0\" cy=\"114.0\" r=\"11.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"109.0\" cy=\"130.0\" r=\"9.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"119.0,114.7 121.5,130.6 140.5,129.4 141.0,113.3\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"130.0\" cy=\"114.0\" r=\"11.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"131.0\" cy=\"130.0\" r=\"9.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><ellipse cx=\"105.0\" cy=\"174.0\" rx=\"10.0\" ry=\"4.6\" transform=\"rotate(0.0 105.0 174.0)\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><ellipse cx=\"135.0\" cy=\"174.0\" rx=\"10.0\" ry=\"4.6\" transform=\"rotate(0.0 135.0 174.0)\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"96.0,62.0 144.0,62.0 133.0,116.0 107.0,116.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"96.0\" cy=\"66.0\" r=\"6.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"144.0\" cy=\"66.0\" r=\"6.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"125.5,58.0 125.0,46.0 115.0,46.0 114.5,58.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"120.0\" cy=\"58.0\" r=\"5.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"120.0\" cy=\"46.0\" r=\"5.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"120.0\" cy=\"40.0\" r=\"12.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"100.5,113.4 101.0,145.6 115.0,146.4 119.5,114.6\" fill=\"#f0c6a0\" /><circle cx=\"110.0\" cy=\"114.0\" r=\"9.5\" fill=\"#f0c6a0\" /><circle cx=\"108.0\" cy=\"146.0\" r=\"7.0\" fill=\"#f0c6a0\" /><polygon points=\"101.0,145.7 102.0,172.8 112.0,173.2 115.0,146.3\" fill=\"#f0c6a0\" /><circle cx=\"108.0\" cy=\"146.0\" r=\"7.0\" fill=\"#f0c6a0\" /><circle cx=\"107.0\" cy=\"173.0\" r=\"5.0\" fill=\"#f0c6a0\" /><polygon points=\"120.5,114.6 125.0,146.4 139.0,145.6 139.5,113.4\" fill=\"#f0c6a0\" /><circle cx=\"130.0\" cy=\"114.0\" r=\"9.5\" fill=\"#f0c6a0\" /><circle cx=\"132.0\" cy=\"146.0\" r=\"7.0\" fill=\"#f0c6a0\" /><polygon points=\"125.0,146.3 128.0,173.2 138.0,172.8 139.0,145.7\" fill=\"#f0c6a0\" /><circle cx=\"132.0\" cy=\"146.0\" r=\"7.0\" fill=\"#f0c6a0\" /><circle cx=\"133.0\" cy=\"173.0\" r=\"5.0\" fill=\"#f0c6a0\" /><polygon points=\"99.0,113.3 99.5,129.4 118.5,130.6 121.0,114.7\" fill=\"#17283f\" /><circle cx=\"110.0\" cy=\"114.0\" r=\"11.0\" fill=\"#17283f\" /><circle cx=\"109.0\" cy=\"130.0\" r=\"9.5\" fill=\"#17283f\" /><polygon points=\"119.0,114.7 121.5,130.6 140.5,129.4 141.0,113.3\" fill=\"#17283f\" /><circle cx=\"130.0\" cy=\"114.0\" r=\"11.0\" fill=\"#17283f\" /><circle cx=\"131.0\" cy=\"130.0\" r=\"9.5\" fill=\"#17283f\" /><ellipse cx=\"105.0\" cy=\"174.0\" rx=\"10.0\" ry=\"4.6\" transform=\"rotate(0.0 105.0 174.0)\" fill=\"#f4f6fa\" /><ellipse cx=\"135.0\" cy=\"174.0\" rx=\"10.0\" ry=\"4.6\" transform=\"rotate(0.0 135.0 174.0)\" fill=\"#f4f6fa\" /><polygon points=\"96.0,62.0 144.0,62.0 133.0,116.0 107.0,116.0\" fill=\"#2a4d7a\" /><circle cx=\"96.0\" cy=\"66.0\" r=\"6.0\" fill=\"#2a4d7a\" /><circle cx=\"144.0\" cy=\"66.0\" r=\"6.0\" fill=\"#2a4d7a\" /><polygon points=\"125.5,58.0 125.0,46.0 115.0,46.0 114.5,58.0\" fill=\"#f0c6a0\" /><circle cx=\"120.0\" cy=\"58.0\" r=\"5.5\" fill=\"#f0c6a0\" /><circle cx=\"120.0\" cy=\"46.0\" r=\"5.0\" fill=\"#f0c6a0\" /><circle cx=\"120.0\" cy=\"40.0\" r=\"12.5\" fill=\"#f0c6a0\" /><\/g><path d=\"M107.5,40 A12.5,12.5 0 0 1 132.5,40 Q120,32 107.5,40 Z\" fill=\"#3a2d26\"/><g opacity=\"1.0\"><polygon points=\"99.8,59.2 64.6,56.4 63.4,67.6 98.2,72.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"99.0\" cy=\"66.0\" r=\"6.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"64.0\" cy=\"62.0\" r=\"5.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"62.7,56.5 37.0,63.7 39.0,72.3 65.3,67.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"64.0\" cy=\"62.0\" r=\"5.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"38.0\" cy=\"68.0\" r=\"4.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"38.0\" cy=\"68.0\" r=\"4.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"141.8,72.8 176.6,67.6 175.4,56.4 140.2,59.2\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"141.0\" cy=\"66.0\" r=\"6.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"176.0\" cy=\"62.0\" r=\"5.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"174.7,67.5 201.0,72.3 203.0,63.7 177.3,56.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"176.0\" cy=\"62.0\" r=\"5.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"202.0\" cy=\"68.0\" r=\"4.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"202.0\" cy=\"68.0\" r=\"4.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"99.8,59.2 64.6,56.4 63.4,67.6 98.2,72.8\" fill=\"#f0c6a0\" /><circle cx=\"99.0\" cy=\"66.0\" r=\"6.8\" fill=\"#f0c6a0\" /><circle cx=\"64.0\" cy=\"62.0\" r=\"5.6\" fill=\"#f0c6a0\" /><polygon points=\"62.7,56.5 37.0,63.7 39.0,72.3 65.3,67.5\" fill=\"#f0c6a0\" /><circle cx=\"64.0\" cy=\"62.0\" r=\"5.6\" fill=\"#f0c6a0\" /><circle cx=\"38.0\" cy=\"68.0\" r=\"4.4\" fill=\"#f0c6a0\" /><circle cx=\"38.0\" cy=\"68.0\" r=\"4.8\" fill=\"#f0c6a0\" /><polygon points=\"141.8,72.8 176.6,67.6 175.4,56.4 140.2,59.2\" fill=\"#f0c6a0\" /><circle cx=\"141.0\" cy=\"66.0\" r=\"6.8\" fill=\"#f0c6a0\" /><circle cx=\"176.0\" cy=\"62.0\" r=\"5.6\" fill=\"#f0c6a0\" /><polygon points=\"174.7,67.5 201.0,72.3 203.0,63.7 177.3,56.5\" fill=\"#f0c6a0\" /><circle cx=\"176.0\" cy=\"62.0\" r=\"5.6\" fill=\"#f0c6a0\" /><circle cx=\"202.0\" cy=\"68.0\" r=\"4.4\" fill=\"#f0c6a0\" /><circle cx=\"202.0\" cy=\"68.0\" r=\"4.8\" fill=\"#f0c6a0\" /><\/g><ellipse cx=\"89.2\" cy=\"62.9\" rx=\"15.0\" ry=\"11.0\" transform=\"rotate(0.0 89.2 62.9)\" fill=\"url(#glow)\" style=\"mix-blend-mode:normal\"/><ellipse cx=\"150.8\" cy=\"62.9\" rx=\"15.0\" ry=\"11.0\" transform=\"rotate(0.0 150.8 62.9)\" fill=\"url(#glow)\" style=\"mix-blend-mode:normal\"/><polygon points=\"44.9,72.0 38.0,76.0 31.1,72.0 31.1,64.0 38.0,60.0 44.9,64.0\" fill=\"#34404f\" stroke=\"#1f3a5c\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><circle cx=\"38.0\" cy=\"68.0\" r=\"3.0\" fill=\"#8392a6\"/><polygon points=\"208.9,72.0 202.0,76.0 195.1,72.0 195.1,64.0 202.0,60.0 208.9,64.0\" fill=\"#34404f\" stroke=\"#1f3a5c\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><circle cx=\"202.0\" cy=\"68.0\" r=\"3.0\" fill=\"#8392a6\"/><path d=\"M84.0,108.0 Q55.5,101.6 46.0,74.0\" fill=\"none\" stroke=\"#ee6c3b\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-dasharray=\"1,5.2\"/><polygon points=\"46.0,74.0 44.7,81.4 51.5,79.1\" fill=\"#ee6c3b\"/><path d=\"M156.0,108.0 Q184.5,101.6 194.0,74.0\" fill=\"none\" stroke=\"#ee6c3b\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-dasharray=\"1,5.2\"/><polygon points=\"194.0,74.0 188.5,79.1 195.3,81.4\" fill=\"#ee6c3b\"/>\n<g>\n<rect x=\"10\" y=\"10\" width=\"103.60000000000001\" height=\"17\" rx=\"8.5\" fill=\"#1f3a5c\"/>\n<text x=\"61.800000000000004\" y=\"22\" font-size=\"8.8\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\">СРЕДНЯЯ ДЕЛЬТА<\/text>\n<\/g>\n<g>\n<circle cx=\"17\" cy=\"187\" r=\"4.6\" fill=\"#ee6c3b\"/>\n<text x=\"26\" y=\"190.4\" font-size=\"9\" fill=\"#44546a\" font-weight=\"600\">Махи в стороны: локти ведут<\/text>\n<\/g>\n<\/svg>","calf_standing":"<svg viewBox=\"0 0 240 200\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"Arial, Helvetica, sans-serif\">\n<defs>\n<linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#f7f9fc\"/><stop offset=\"1\" stop-color=\"#e6edf6\"/><\/linearGradient>\n<radialGradient id=\"glow\"><stop offset=\"0\" stop-color=\"#ee6c3b\" stop-opacity=\"0.95\"/><stop offset=\"0.6\" stop-color=\"#ee6c3b\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#ee6c3b\" stop-opacity=\"0\"/><\/radialGradient>\n\n<\/defs>\n<rect x=\"1\" y=\"1\" width=\"238\" height=\"198\" rx=\"14\" fill=\"url(#bg)\" stroke=\"#d5dde8\" stroke-width=\"1.5\"/>\n<rect x=\"8\" y=\"176\" width=\"224\" height=\"3\" rx=\"1.5\" fill=\"#cfd9e6\"/><rect x=\"66\" y=\"156\" width=\"108\" height=\"20\" rx=\"3\" fill=\"#8392a6\" stroke=\"#1f3a5c\" stroke-width=\"2\"/><rect x=\"70\" y=\"158\" width=\"100\" height=\"3\" rx=\"1.5\" fill=\"#a9b6c8\"/><g opacity=\"0.9\"><polygon points=\"100.0,93.7 101.0,122.7 117.0,123.3 120.0,94.3\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"110.0\" cy=\"94.0\" r=\"10.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"109.0\" cy=\"123.0\" r=\"8.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"101.4,123.3 105.6,150.2 114.4,149.8 116.6,122.7\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"109.0\" cy=\"123.0\" r=\"7.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"110.0\" cy=\"150.0\" r=\"4.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><ellipse cx=\"109.3\" cy=\"130.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 109.3 130.6)\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"99.0,93.3 99.0,109.4 119.0,110.6 121.0,94.7\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"110.0\" cy=\"94.0\" r=\"11.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"109.0\" cy=\"110.0\" r=\"10.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><ellipse cx=\"109.0\" cy=\"158.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 109.0 158.0)\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"110.0\" cy=\"153.0\" r=\"4.8\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"120.0,94.3 123.0,123.3 139.0,122.7 140.0,93.7\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"130.0\" cy=\"94.0\" r=\"10.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"131.0\" cy=\"123.0\" r=\"8.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"123.4,122.7 125.6,149.8 134.4,150.2 138.6,123.3\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"131.0\" cy=\"123.0\" r=\"7.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"130.0\" cy=\"150.0\" r=\"4.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><ellipse cx=\"130.7\" cy=\"130.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 130.7 130.6)\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"119.0,94.7 121.0,110.6 141.0,109.4 141.0,93.3\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"130.0\" cy=\"94.0\" r=\"11.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"131.0\" cy=\"110.0\" r=\"10.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><ellipse cx=\"131.0\" cy=\"158.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 131.0 158.0)\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"130.0\" cy=\"153.0\" r=\"4.8\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"96.0,54.0 144.0,54.0 132.0,98.0 108.0,98.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"96.0\" cy=\"58.0\" r=\"6.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"144.0\" cy=\"58.0\" r=\"6.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"125.5,52.0 125.0,42.0 115.0,42.0 114.5,52.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"120.0\" cy=\"52.0\" r=\"5.5\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"120.0\" cy=\"42.0\" r=\"5.0\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"120.0\" cy=\"34.0\" r=\"12.5\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"89.5,56.7 85.7,80.9 96.3,83.1 102.5,59.3\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"96.0\" cy=\"58.0\" r=\"6.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"91.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"85.6,82.2 87.6,104.2 96.4,103.8 96.4,81.8\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"91.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"92.0\" cy=\"104.0\" r=\"4.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"92.0\" cy=\"104.0\" r=\"4.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"137.5,59.3 143.7,83.1 154.3,80.9 150.5,56.7\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"144.0\" cy=\"58.0\" r=\"6.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"149.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"143.6,81.8 143.6,103.8 152.4,104.2 154.4,82.2\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"149.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"148.0\" cy=\"104.0\" r=\"4.4\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><circle cx=\"148.0\" cy=\"104.0\" r=\"4.6\" fill=\"#dfe7f2\" stroke=\"#7f95b3\" stroke-width=\"1.4\" stroke-linejoin=\"round\" stroke-dasharray=\"3,2.4\"/><polygon points=\"100.0,93.7 101.0,122.7 117.0,123.3 120.0,94.3\" fill=\"#dfe7f2\" /><circle cx=\"110.0\" cy=\"94.0\" r=\"10.0\" fill=\"#dfe7f2\" /><circle cx=\"109.0\" cy=\"123.0\" r=\"8.0\" fill=\"#dfe7f2\" /><polygon points=\"101.4,123.3 105.6,150.2 114.4,149.8 116.6,122.7\" fill=\"#dfe7f2\" /><circle cx=\"109.0\" cy=\"123.0\" r=\"7.6\" fill=\"#dfe7f2\" /><circle cx=\"110.0\" cy=\"150.0\" r=\"4.4\" fill=\"#dfe7f2\" /><ellipse cx=\"109.3\" cy=\"130.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 109.3 130.6)\" fill=\"#dfe7f2\" /><polygon points=\"99.0,93.3 99.0,109.4 119.0,110.6 121.0,94.7\" fill=\"#dfe7f2\" /><circle cx=\"110.0\" cy=\"94.0\" r=\"11.0\" fill=\"#dfe7f2\" /><circle cx=\"109.0\" cy=\"110.0\" r=\"10.0\" fill=\"#dfe7f2\" /><ellipse cx=\"109.0\" cy=\"158.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 109.0 158.0)\" fill=\"#dfe7f2\" /><circle cx=\"110.0\" cy=\"153.0\" r=\"4.8\" fill=\"#dfe7f2\" /><polygon points=\"120.0,94.3 123.0,123.3 139.0,122.7 140.0,93.7\" fill=\"#dfe7f2\" /><circle cx=\"130.0\" cy=\"94.0\" r=\"10.0\" fill=\"#dfe7f2\" /><circle cx=\"131.0\" cy=\"123.0\" r=\"8.0\" fill=\"#dfe7f2\" /><polygon points=\"123.4,122.7 125.6,149.8 134.4,150.2 138.6,123.3\" fill=\"#dfe7f2\" /><circle cx=\"131.0\" cy=\"123.0\" r=\"7.6\" fill=\"#dfe7f2\" /><circle cx=\"130.0\" cy=\"150.0\" r=\"4.4\" fill=\"#dfe7f2\" /><ellipse cx=\"130.7\" cy=\"130.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 130.7 130.6)\" fill=\"#dfe7f2\" /><polygon points=\"119.0,94.7 121.0,110.6 141.0,109.4 141.0,93.3\" fill=\"#dfe7f2\" /><circle cx=\"130.0\" cy=\"94.0\" r=\"11.0\" fill=\"#dfe7f2\" /><circle cx=\"131.0\" cy=\"110.0\" r=\"10.0\" fill=\"#dfe7f2\" /><ellipse cx=\"131.0\" cy=\"158.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 131.0 158.0)\" fill=\"#dfe7f2\" /><circle cx=\"130.0\" cy=\"153.0\" r=\"4.8\" fill=\"#dfe7f2\" /><polygon points=\"96.0,54.0 144.0,54.0 132.0,98.0 108.0,98.0\" fill=\"#dfe7f2\" /><circle cx=\"96.0\" cy=\"58.0\" r=\"6.0\" fill=\"#dfe7f2\" /><circle cx=\"144.0\" cy=\"58.0\" r=\"6.0\" fill=\"#dfe7f2\" /><polygon points=\"125.5,52.0 125.0,42.0 115.0,42.0 114.5,52.0\" fill=\"#dfe7f2\" /><circle cx=\"120.0\" cy=\"52.0\" r=\"5.5\" fill=\"#dfe7f2\" /><circle cx=\"120.0\" cy=\"42.0\" r=\"5.0\" fill=\"#dfe7f2\" /><circle cx=\"120.0\" cy=\"34.0\" r=\"12.5\" fill=\"#dfe7f2\" /><polygon points=\"89.5,56.7 85.7,80.9 96.3,83.1 102.5,59.3\" fill=\"#dfe7f2\" /><circle cx=\"96.0\" cy=\"58.0\" r=\"6.6\" fill=\"#dfe7f2\" /><circle cx=\"91.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" /><polygon points=\"85.6,82.2 87.6,104.2 96.4,103.8 96.4,81.8\" fill=\"#dfe7f2\" /><circle cx=\"91.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" /><circle cx=\"92.0\" cy=\"104.0\" r=\"4.4\" fill=\"#dfe7f2\" /><circle cx=\"92.0\" cy=\"104.0\" r=\"4.6\" fill=\"#dfe7f2\" /><polygon points=\"137.5,59.3 143.7,83.1 154.3,80.9 150.5,56.7\" fill=\"#dfe7f2\" /><circle cx=\"144.0\" cy=\"58.0\" r=\"6.6\" fill=\"#dfe7f2\" /><circle cx=\"149.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" /><polygon points=\"143.6,81.8 143.6,103.8 152.4,104.2 154.4,82.2\" fill=\"#dfe7f2\" /><circle cx=\"149.0\" cy=\"82.0\" r=\"5.4\" fill=\"#dfe7f2\" /><circle cx=\"148.0\" cy=\"104.0\" r=\"4.4\" fill=\"#dfe7f2\" /><circle cx=\"148.0\" cy=\"104.0\" r=\"4.6\" fill=\"#dfe7f2\" /><\/g><g opacity=\"1.0\"><polygon points=\"100.0,81.7 101.0,110.7 117.0,111.3 120.0,82.3\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"110.0\" cy=\"82.0\" r=\"10.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"109.0\" cy=\"111.0\" r=\"8.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"101.4,111.3 105.6,138.2 114.4,137.8 116.6,110.7\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"109.0\" cy=\"111.0\" r=\"7.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"110.0\" cy=\"138.0\" r=\"4.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><ellipse cx=\"109.3\" cy=\"118.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 109.3 118.6)\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"99.0,81.3 99.0,97.4 119.0,98.6 121.0,82.7\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"110.0\" cy=\"82.0\" r=\"11.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"109.0\" cy=\"98.0\" r=\"10.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><ellipse cx=\"109.0\" cy=\"145.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 109.0 145.0)\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"110.0\" cy=\"141.0\" r=\"4.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"120.0,82.3 123.0,111.3 139.0,110.7 140.0,81.7\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"130.0\" cy=\"82.0\" r=\"10.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"131.0\" cy=\"111.0\" r=\"8.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"123.4,110.7 125.6,137.8 134.4,138.2 138.6,111.3\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"131.0\" cy=\"111.0\" r=\"7.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"130.0\" cy=\"138.0\" r=\"4.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><ellipse cx=\"130.7\" cy=\"118.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 130.7 118.6)\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"119.0,82.7 121.0,98.6 141.0,97.4 141.0,81.3\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"130.0\" cy=\"82.0\" r=\"11.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"131.0\" cy=\"98.0\" r=\"10.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><ellipse cx=\"131.0\" cy=\"145.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 131.0 145.0)\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"130.0\" cy=\"141.0\" r=\"4.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"96.0,42.0 144.0,42.0 132.0,86.0 108.0,86.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"96.0\" cy=\"46.0\" r=\"6.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"144.0\" cy=\"46.0\" r=\"6.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"125.5,40.0 125.0,30.0 115.0,30.0 114.5,40.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"120.0\" cy=\"40.0\" r=\"5.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"120.0\" cy=\"30.0\" r=\"5.0\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"120.0\" cy=\"22.0\" r=\"12.5\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"100.0,81.7 101.0,110.7 117.0,111.3 120.0,82.3\" fill=\"#f0c6a0\" /><circle cx=\"110.0\" cy=\"82.0\" r=\"10.0\" fill=\"#f0c6a0\" /><circle cx=\"109.0\" cy=\"111.0\" r=\"8.0\" fill=\"#f0c6a0\" /><polygon points=\"101.4,111.3 105.6,138.2 114.4,137.8 116.6,110.7\" fill=\"#f0c6a0\" /><circle cx=\"109.0\" cy=\"111.0\" r=\"7.6\" fill=\"#f0c6a0\" /><circle cx=\"110.0\" cy=\"138.0\" r=\"4.4\" fill=\"#f0c6a0\" /><ellipse cx=\"109.3\" cy=\"118.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 109.3 118.6)\" fill=\"#f0c6a0\" /><polygon points=\"99.0,81.3 99.0,97.4 119.0,98.6 121.0,82.7\" fill=\"#17283f\" /><circle cx=\"110.0\" cy=\"82.0\" r=\"11.0\" fill=\"#17283f\" /><circle cx=\"109.0\" cy=\"98.0\" r=\"10.0\" fill=\"#17283f\" /><ellipse cx=\"109.0\" cy=\"145.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 109.0 145.0)\" fill=\"#f4f6fa\" /><circle cx=\"110.0\" cy=\"141.0\" r=\"4.8\" fill=\"#f4f6fa\" /><polygon points=\"120.0,82.3 123.0,111.3 139.0,110.7 140.0,81.7\" fill=\"#f0c6a0\" /><circle cx=\"130.0\" cy=\"82.0\" r=\"10.0\" fill=\"#f0c6a0\" /><circle cx=\"131.0\" cy=\"111.0\" r=\"8.0\" fill=\"#f0c6a0\" /><polygon points=\"123.4,110.7 125.6,137.8 134.4,138.2 138.6,111.3\" fill=\"#f0c6a0\" /><circle cx=\"131.0\" cy=\"111.0\" r=\"7.6\" fill=\"#f0c6a0\" /><circle cx=\"130.0\" cy=\"138.0\" r=\"4.4\" fill=\"#f0c6a0\" /><ellipse cx=\"130.7\" cy=\"118.6\" rx=\"8.8\" ry=\"12.5\" transform=\"rotate(0.0 130.7 118.6)\" fill=\"#f0c6a0\" /><polygon points=\"119.0,82.7 121.0,98.6 141.0,97.4 141.0,81.3\" fill=\"#17283f\" /><circle cx=\"130.0\" cy=\"82.0\" r=\"11.0\" fill=\"#17283f\" /><circle cx=\"131.0\" cy=\"98.0\" r=\"10.0\" fill=\"#17283f\" /><ellipse cx=\"131.0\" cy=\"145.0\" rx=\"8.0\" ry=\"5.4\" transform=\"rotate(0.0 131.0 145.0)\" fill=\"#f4f6fa\" /><circle cx=\"130.0\" cy=\"141.0\" r=\"4.8\" fill=\"#f4f6fa\" /><polygon points=\"96.0,42.0 144.0,42.0 132.0,86.0 108.0,86.0\" fill=\"#2a4d7a\" /><circle cx=\"96.0\" cy=\"46.0\" r=\"6.0\" fill=\"#2a4d7a\" /><circle cx=\"144.0\" cy=\"46.0\" r=\"6.0\" fill=\"#2a4d7a\" /><polygon points=\"125.5,40.0 125.0,30.0 115.0,30.0 114.5,40.0\" fill=\"#f0c6a0\" /><circle cx=\"120.0\" cy=\"40.0\" r=\"5.5\" fill=\"#f0c6a0\" /><circle cx=\"120.0\" cy=\"30.0\" r=\"5.0\" fill=\"#f0c6a0\" /><circle cx=\"120.0\" cy=\"22.0\" r=\"12.5\" fill=\"#f0c6a0\" /><\/g><path d=\"M107.5,22 A12.5,12.5 0 0 1 132.5,22 Q130,32 120,33 Q110,32 107.5,22 Z\" fill=\"#3a2d26\"/><g opacity=\"1.0\"><polygon points=\"89.5,44.7 85.7,68.9 96.3,71.1 102.5,47.3\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"96.0\" cy=\"46.0\" r=\"6.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"91.0\" cy=\"70.0\" r=\"5.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"85.6,70.2 87.6,92.2 96.4,91.8 96.4,69.8\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"91.0\" cy=\"70.0\" r=\"5.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"92.0\" cy=\"92.0\" r=\"4.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"92.0\" cy=\"92.0\" r=\"4.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"137.5,47.3 143.7,71.1 154.3,68.9 150.5,44.7\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"144.0\" cy=\"46.0\" r=\"6.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"149.0\" cy=\"70.0\" r=\"5.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"143.6,69.8 143.6,91.8 152.4,92.2 154.4,70.2\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"149.0\" cy=\"70.0\" r=\"5.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"148.0\" cy=\"92.0\" r=\"4.4\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><circle cx=\"148.0\" cy=\"92.0\" r=\"4.6\" fill=\"#1f3a5c\" stroke=\"#1f3a5c\" stroke-width=\"3.2\" stroke-linejoin=\"round\" /><polygon points=\"89.5,44.7 85.7,68.9 96.3,71.1 102.5,47.3\" fill=\"#f0c6a0\" /><circle cx=\"96.0\" cy=\"46.0\" r=\"6.6\" fill=\"#f0c6a0\" /><circle cx=\"91.0\" cy=\"70.0\" r=\"5.4\" fill=\"#f0c6a0\" /><polygon points=\"85.6,70.2 87.6,92.2 96.4,91.8 96.4,69.8\" fill=\"#f0c6a0\" /><circle cx=\"91.0\" cy=\"70.0\" r=\"5.4\" fill=\"#f0c6a0\" /><circle cx=\"92.0\" cy=\"92.0\" r=\"4.4\" fill=\"#f0c6a0\" /><circle cx=\"92.0\" cy=\"92.0\" r=\"4.6\" fill=\"#f0c6a0\" /><polygon points=\"137.5,47.3 143.7,71.1 154.3,68.9 150.5,44.7\" fill=\"#f0c6a0\" /><circle cx=\"144.0\" cy=\"46.0\" r=\"6.6\" fill=\"#f0c6a0\" /><circle cx=\"149.0\" cy=\"70.0\" r=\"5.4\" fill=\"#f0c6a0\" /><polygon points=\"143.6,69.8 143.6,91.8 152.4,92.2 154.4,70.2\" fill=\"#f0c6a0\" /><circle cx=\"149.0\" cy=\"70.0\" r=\"5.4\" fill=\"#f0c6a0\" /><circle cx=\"148.0\" cy=\"92.0\" r=\"4.4\" fill=\"#f0c6a0\" /><circle cx=\"148.0\" cy=\"92.0\" r=\"4.6\" fill=\"#f0c6a0\" /><\/g><polygon points=\"98.2,100.6 92.0,104.2 85.8,100.6 85.8,93.4 92.0,89.8 98.2,93.4\" fill=\"#34404f\" stroke=\"#1f3a5c\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><circle cx=\"92.0\" cy=\"97.0\" r=\"2.7\" fill=\"#8392a6\"/><polygon points=\"154.2,100.6 148.0,104.2 141.8,100.6 141.8,93.4 148.0,89.8 154.2,93.4\" fill=\"#34404f\" stroke=\"#1f3a5c\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/><circle cx=\"148.0\" cy=\"97.0\" r=\"2.7\" fill=\"#8392a6\"/><ellipse cx=\"109.0\" cy=\"124.0\" rx=\"9.5\" ry=\"14.0\" transform=\"rotate(0.0 109.0 124.0)\" fill=\"url(#glow)\" style=\"mix-blend-mode:normal\"/><ellipse cx=\"131.0\" cy=\"124.0\" rx=\"9.5\" ry=\"14.0\" transform=\"rotate(0.0 131.0 124.0)\" fill=\"url(#glow)\" style=\"mix-blend-mode:normal\"/><path d=\"M80.0,172.0 Q80.0,159.0 80.0,146.0\" fill=\"none\" stroke=\"#ee6c3b\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-dasharray=\"1,5.2\"/><polygon points=\"80.0,146.0 76.4,152.6 83.6,152.6\" fill=\"#ee6c3b\"/><path d=\"M160.0,172.0 Q160.0,159.0 160.0,146.0\" fill=\"none\" stroke=\"#ee6c3b\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-dasharray=\"1,5.2\"/><polygon points=\"160.0,146.0 156.4,152.6 163.6,152.6\" fill=\"#ee6c3b\"/>\n<g>\n<rect x=\"10\" y=\"10\" width=\"39.6\" height=\"17\" rx=\"8.5\" fill=\"#1f3a5c\"/>\n<text x=\"29.8\" y=\"22\" font-size=\"8.8\" font-weight=\"700\" fill=\"#fff\" text-anchor=\"middle\">ИКРЫ<\/text>\n<\/g>\n<g>\n<circle cx=\"17\" cy=\"187\" r=\"4.6\" fill=\"#ee6c3b\"/>\n<text x=\"26\" y=\"190.4\" font-size=\"9\" fill=\"#44546a\" font-weight=\"600\">Подъём на носки: пауза вверху<\/text>\n<\/g>\n<\/svg>"};
+const VERSION = '1.0';
+const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const DOW = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const DF = ['разминка', 'легко', 'средне', 'тяжело', 'отказ'];
+const DFC = { 'разминка': 'warm', 'легко': 'easy', 'средне': 'mid', 'тяжело': 'hard', 'отказ': 'fail' };
+const LOADS = { barbell: 'Штанга', dumbbell: 'Гантели', smith: 'Смит', stack: 'Тренажёр / блок', bodyweight: 'Свой вес' };
+const TYPES = ['норм', 'рест-пауза', 'негатив'];
+
+const clone = o => JSON.parse(JSON.stringify(o));
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const r2 = x => Math.round(x * 100) / 100;
+const r1 = x => Math.round(x * 10) / 10;
+const nowS = () => Math.floor(Date.now() / 1000) * 1000;
+const dstr = (t = Date.now()) => { const x = new Date(t); return x.getFullYear() + '-' + pad(x.getMonth() + 1) + '-' + pad(x.getDate()); };
+const dparse = s => { const [a, b, c] = s.split('-').map(Number); return new Date(a, b - 1, c).getTime(); };
+const dlabel = s => { const [, b, c] = s.split('-').map(Number); return c + ' ' + MON[b - 1]; };
+const dow = s => DOW[new Date(dparse(s)).getDay()];
+const addDays = (s, n) => dstr(dparse(s) + n * 86400000 + 3600000 * 3);
+const daysBetween = (a, b) => Math.round((dparse(b) - dparse(a)) / 86400000);
+const fn = x => (x == null || isNaN(x)) ? '—' : String(r2(x)).replace('.', ',');
+const mmss = sec => { sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ':' + pad(sec % 60); };
+const parseNum = s => { const v = parseFloat(String(s).replace(',', '.').replace(/[^\d.\-]/g, '')); return isNaN(v) ? null : v; };
+const uid = () => 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+/* ---------- состояние ---------- */
+function defState() {
+  return {
+    v: 1,
+    cfg: { url: '', token: '', cycle: SEED.cycle, wStartDate: SEED.cfg.wStartDate, wStart: SEED.cfg.wStart, paceMin: SEED.cfg.paceMin, paceMax: SEED.cfg.paceMax, sound: true },
+    pool: clone(SEED.pool), complexes: clone(SEED.complexes),
+    log: [], weights: [], sessions: [], outbox: [], active: null, sync: { last: 0, err: '' }
+  };
+}
+function loadState() {
+  try {
+    const j = JSON.parse(localStorage.getItem(KEY));
+    if (j && j.v === 1) { const d = defState(); return Object.assign(d, j, { cfg: Object.assign(d.cfg, j.cfg || {}), sync: Object.assign(d.sync, j.sync || {}) }); }
+  } catch (e) { }
+  return defState();
+}
+let S = loadState();
+let saveFail = false;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); saveFail = false; }
+  catch (e) { if (!saveFail) { saveFail = true; setTimeout(() => toast('Память телефона переполнена'), 0); } }
+}
+
+/* ---------- пул и индексы ---------- */
+let POOLM = null, IDX = null;
+function EX(id) {
+  if (!POOLM) { POOLM = {}; S.pool.forEach(p => POOLM[p.id] = p); }
+  return POOLM[id] || { id, name: id || '—', group: '', load: 'stack', metric: 'reps', step: 1, vg: '', icon: '', tech: '', arch: 0 };
+}
+function touchPool() { POOLM = null; }
+function touchLog() { IDX = null; }
+function idx() {
+  if (IDX) return IDX;
+  IDX = {};
+  for (const r of S.log) (IDX[r.ex] || (IDX[r.ex] = [])).push(r);
+  for (const k in IDX) IDX[k].sort((a, b) => a.ts - b.ts);
+  return IDX;
+}
+const isWork = r => r.df !== 'разминка' && r.ty !== 'дроп';
+const weff = (ex, w) => EX(ex).load === 'dumbbell' ? r2(w * 2) : w;
+function e1of(rec) {
+  const e = EX(rec.ex);
+  if (rec.m === 'sec' || e.load === 'bodyweight' || !(rec.r > 0) || !(rec.we > 0)) return 0;
+  return r1(rec.we * (1 + rec.r / 30));
+}
+function scoreOf(rec) {
+  if (!isWork(rec)) return null;
+  const e = EX(rec.ex);
+  if (rec.m === 'sec') return rec.r;
+  if (e.load === 'bodyweight') return rec.we * 1000 + rec.r;
+  return rec.we * (1 + rec.r / 30);
+}
+function valOf(rec) { // для графиков
+  const e = EX(rec.ex);
+  if (rec.m === 'sec') return rec.r;
+  if (e.load === 'bodyweight') return rec.we > 0 ? rec.we * (1 + rec.r / 30) : rec.r;
+  return rec.we * (1 + rec.r / 30);
+}
+function exSessions(id, excludeSid) {
+  const arr = (idx()[id] || []).filter(r => r.sid !== excludeSid);
+  const m = new Map();
+  for (const r of arr) { if (!m.has(r.sid)) m.set(r.sid, { sid: r.sid, d: r.d, ts: r.ts, sets: [] }); m.get(r.sid).sets.push(r); }
+  return [...m.values()].sort((a, b) => a.ts - b.ts);
+}
+function setsOf(sid, id) { return (idx()[id] || []).filter(r => r.sid === sid); }
+function bestRec(id, excludeSid) {
+  let best = null, bs = -1;
+  for (const r of (idx()[id] || [])) { if (r.sid === excludeSid) continue; const s = scoreOf(r); if (s != null && s > bs) { bs = s; best = r; } }
+  return best;
+}
+function lastVariant(ex) {
+  const e = EX(ex);
+  if (!e.vg) return ex;
+  const vs = S.pool.filter(p => p.vg === e.vg && !p.arch).map(p => p.id);
+  let last = null;
+  for (const id of vs) { const a = idx()[id]; if (a && a.length) { const t = a[a.length - 1]; if (!last || t.ts > last.ts) last = t; } }
+  return last ? last.ex : ex;
+}
+function variantsOf(ex) {
+  const e = EX(ex);
+  if (!e.vg) return [];
+  return S.pool.filter(p => p.vg === e.vg && !p.arch);
+}
+const cxOf = key => S.complexes.find(c => c.key === key);
+const cxName = key => key === 'F' ? 'Свободная' : (cxOf(key) ? cxOf(key).name : key);
+const cxLabel = key => key === 'F' ? 'Свободная тренировка' : (cxOf(key) ? key + ' · ' + cxOf(key).name : key);
+
+/* ---------- ротация A→B→C ---------- */
+function nextComplex() {
+  const keys = S.complexes.map(c => c.key);
+  if (!keys.length) return null;
+  const fin = S.sessions.filter(s => s.fin && s.cx !== 'F' && keys.includes(s.cx)).sort((a, b) => a.start - b.start);
+  if (!fin.length) return keys[0];
+  const last = fin[fin.length - 1].cx;
+  return keys[(keys.indexOf(last) + 1) % keys.length];
+}
+function lastSessionOf(cx) {
+  const f = S.sessions.filter(s => s.fin && s.cx === cx).sort((a, b) => b.start - a.start);
+  return f[0] || null;
+}
+function estMin(cx) {
+  const f = S.sessions.filter(s => s.fin && s.cx === cx && s.min > 20).sort((a, b) => b.start - a.start).slice(0, 3);
+  if (!f.length) return 75;
+  return Math.round(f.reduce((a, s) => a + s.min, 0) / f.length);
+}
+
+/* ---------- черновик подхода ---------- */
+function prefill(it, id, k, done) {
+  const e = EX(id);
+  const ses = exSessions(id, S.active ? S.active.sid : '');
+  const hs = ses.length ? ses[ses.length - 1].sets.filter(isWork) : [];
+  const wk = done.filter(isWork);
+  let src = null;
+  if (wk.length) { const h1 = hs[0]; src = (hs[k - 1] && h1 && wk[0].w === h1.w) ? hs[k - 1] : wk[wk.length - 1]; }
+  else src = hs[k - 1] || hs[hs.length - 1] || null;
+  return {
+    w: src ? src.w : 0,
+    r: src ? src.r : (e.metric === 'sec' ? 30 : it.rmin),
+    ty: 'норм',
+    df: src ? (src.df === 'разминка' ? 'средне' : src.df) : 'средне'
+  };
+}
+function draft(it) {
+  const A = S.active, id = it.use || it.ex;
+  const done = setsOf(A.sid, id);
+  const key = id + ':' + done.length;
+  if (it.d && it.dk === key) return it.d;
+  it.d = prefill(it, id, done.filter(isWork).length + 1, done);
+  it.dk = key;
+  return it.d;
+}
+function histWeights(id) {
+  const ses = exSessions(id, S.active ? S.active.sid : '').slice(-3);
+  const set = new Set();
+  for (const s of ses) for (const r of s.sets) if (isWork(r) && r.w > 0) set.add(r.w);
+  return [...set].sort((a, b) => b - a).slice(0, 5);
+}
+function progressUp(it) {
+  const id = it.use || it.ex;
+  const ses = exSessions(id, S.active ? S.active.sid : '');
+  if (!ses.length) return false;
+  const hs = ses[ses.length - 1].sets.filter(isWork);
+  if (hs.length < it.sets) return false;
+  return hs.slice(0, it.sets).every(r => r.r >= it.rmax);
+}
+
+/* ---------- сессия ---------- */
+function startSession(key) {
+  const now = nowS(), dt = new Date(now);
+  let items = [];
+  if (key !== 'F') {
+    const c = cxOf(key);
+    items = c.items.map(x => Object.assign({}, x, { use: lastVariant(x.ex), rep: false, skip: false, note: '', pnote: '' }));
+  }
+  const A = {
+    sid: 's-' + dstr(now).replace(/-/g, '') + '-' + pad(dt.getHours()) + pad(dt.getMinutes()) + pad(dt.getSeconds()), cx: key, cyc: S.cfg.cycle,
+    d: dstr(now), start: now, warmEnd: 0, items, cur: 0, restStart: 0, restPlan: 0, beeped: false
+  };
+  S.active = A;
+  A.cur = firstUndone(A, -1);
+  save();
+  return A;
+}
+function itemWork(A, it) { return setsOf(A.sid, it.use || it.ex).filter(isWork).length; }
+function itemDone(A, it) { return it.skip || itemWork(A, it) >= it.sets; }
+function firstUndone(A, from) {
+  const n = A.items.length;
+  for (let k = 1; k <= n; k++) { const i = (from + k + n) % n; if (n && !itemDone(A, A.items[i])) return i; }
+  return Math.max(0, Math.min(from, n - 1));
+}
+function nextN(A, ex) { return setsOf(A.sid, ex).filter(r => r.ty !== 'дроп').length + 1; }
+
+function makeRec(A, it, d) {
+  const ex = it.use || it.ex, e = EX(ex);
+  const sets = setsOf(A.sid, ex);
+  const isDrop = d.ty === 'дроп';
+  const nonDrop = sets.filter(r => r.ty !== 'дроп');
+  const rec = {
+    id: uid(), sid: A.sid, ts: nowS(), d: A.d, cyc: A.cyc, cx: A.cx, ex,
+    n: isDrop ? (nonDrop.length ? nonDrop[nonDrop.length - 1].n : 1) : nonDrop.length + 1,
+    ty: d.ty, w: d.w, we: weff(ex, d.w), r: d.r, m: e.metric === 'sec' ? 'sec' : 'reps', df: d.df,
+    e1: 0, pr: 0, sub: it.rep ? it.ex : '', grp: it.grp || '', note: it.pnote || '', sy: 0
+  };
+  rec.e1 = e1of(rec);
+  rec.pr = isPR(rec) ? 1 : 0;
+  return rec;
+}
+function isPR(rec) {
+  const s = scoreOf(rec);
+  if (s == null) return false;
+  let prev = -1, had = false;
+  for (const r of (idx()[rec.ex] || [])) {
+    if (r.id === rec.id) continue;
+    const q = scoreOf(r); if (q == null) continue;
+    if (r.sid !== rec.sid) had = true;
+    if (r.sid !== rec.sid || r.ts < rec.ts) prev = Math.max(prev, q);
+  }
+  return had && s > prev + 1e-9;
+}
+
+/* ---------- время ---------- */
+function sessionRows(sid) { return S.log.filter(r => r.sid === sid).sort((a, b) => a.ts - b.ts); }
+function exTimes(sid, boundary) {
+  const rows = sessionRows(sid);
+  const out = new Map();
+  let prev = boundary;
+  for (const r of rows) {
+    const g = Math.max(0, (r.ts - prev) / 1000);
+    prev = r.ts;
+    out.set(r.ex, (out.get(r.ex) || 0) + g);
+  }
+  return [...out.entries()].map(([ex, sec]) => ({ ex, sec }));
+}
+function summarize(A) {
+  const rows = sessionRows(A.sid);
+  const end = rows.length ? rows[rows.length - 1].ts : nowS();
+  return {
+    sid: A.sid, d: A.d, cx: A.cx, cyc: A.cyc, start: A.start, end, warmEnd: A.warmEnd || 0,
+    min: Math.max(1, Math.round((end - A.start) / 60000)),
+    wmin: Math.max(1, Math.round((end - (A.warmEnd || A.start)) / 60000)),
+    sets: rows.filter(isWork).length, prs: rows.filter(r => r.pr).length,
+    subs: A.items.filter(i => i.rep).length, skips: A.items.filter(i => i.skip).length,
+    note: A.snote || '', fin: 1
+  };
+}
+
+/* ---------- вес тела ---------- */
+function weightOn(d) { const w = S.weights.find(x => x.d === d); return w ? w.w : null; }
+function avgRange(fromD, toD) {
+  const v = S.weights.filter(x => x.d >= fromD && x.d <= toD).map(x => x.w);
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+}
+function corridor(d) {
+  const n = daysBetween(S.cfg.wStartDate, d);
+  return { lo: S.cfg.wStart + n * S.cfg.paceMin / 7, hi: S.cfg.wStart + n * S.cfg.paceMax / 7 };
+}
+
+/* ====== Синхронизация с Google Таблицей (Apps Script) ====== */
+let syncing = false, pulling = false;
+
+function setPayload(rec) {
+  const p = Object.assign({}, rec);
+  delete p.sy;
+  p.exn = EX(rec.ex).name;
+  p.subn = rec.sub ? EX(rec.sub).name : '';
+  p.cxn = cxLabel(rec.cx);
+  return p;
+}
+function qop(op) {
+  op.oid = uid();
+  const same = o => {
+    if (op.op === 'set' || op.op === 'delset') return (o.op === 'set' || o.op === 'delset') && o.id === op.id;
+    if (op.op === 'weight') return o.op === 'weight' && o.d === op.d;
+    if (op.op === 'session') return o.op === 'session' && o.s.sid === op.s.sid;
+    if (op.op === 'exercise') return o.op === 'exercise' && o.ex.id === op.ex.id;
+    if (op.op === 'program') return o.op === 'program';
+    return false;
+  };
+  S.outbox = S.outbox.filter(o => !same(o));
+  S.outbox.push(op);
+  save();
+  flush();
+}
+function qSet(rec) { rec.sy = 0; qop({ op: 'set', id: rec.id, rec: setPayload(rec) }); }
+function qSession(s) { qop({ op: 'session', s: Object.assign({}, s) }); }
+
+function syncState() {
+  if (!S.cfg.url || !S.cfg.token) return 'off';
+  if (S.sync.err) return 'err';
+  if (S.outbox.length) return 'wait';
+  return 'ok';
+}
+function syncText() {
+  const st = syncState();
+  if (st === 'off') return 'Таблица не подключена — данные хранятся только в телефоне';
+  if (st === 'err') return 'Не удалось отправить: ' + S.sync.err + '. В очереди: ' + S.outbox.length;
+  if (st === 'wait') return 'В очереди на отправку: ' + S.outbox.length + (navigator.onLine ? '' : ' (нет сети)');
+  return 'Всё сохранено в таблице' + (S.sync.last ? ' · ' + new Date(S.sync.last).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '');
+}
+async function post(payload) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 25000);
+  try {
+    const r = await fetch(S.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), redirect: 'follow', signal: ctl.signal });
+    const txt = await r.text();
+    try { return JSON.parse(txt); } catch (e) { throw new Error('ответ не похож на ответ скрипта'); }
+  } finally { clearTimeout(t); }
+}
+async function flush() {
+  if (syncing) return;
+  if (!S.cfg.url || !S.cfg.token || !S.outbox.length || !navigator.onLine) { uiSync(); return; }
+  syncing = true;
+  try {
+    while (S.outbox.length) {
+      const batch = S.outbox.slice(0, 30);
+      const res = await post({ token: S.cfg.token, ops: batch });
+      if (!res || !res.ok) throw new Error((res && res.error) || 'ошибка скрипта');
+      const done = new Set(batch.map(o => o.oid));
+      S.outbox = S.outbox.filter(o => !done.has(o.oid));
+      const m = new Map(S.log.map(r => [r.id, r]));
+      for (const o of batch) if (o.op === 'set') { const r = m.get(o.id); if (r && !S.outbox.some(x => x.op === 'set' && x.id === o.id)) r.sy = 1; }
+      S.sync.err = ''; S.sync.last = Date.now();
+      save();
+    }
+  } catch (e) {
+    S.sync.err = (e && e.name === 'AbortError') ? 'долгий ответ' : String((e && e.message) || e);
+  } finally { syncing = false; save(); uiSync(); }
+}
+
+async function pull(manual) {
+  if (pulling || !S.cfg.url || !S.cfg.token || !navigator.onLine) return false;
+  pulling = true;
+  try {
+    const u = S.cfg.url + (S.cfg.url.includes('?') ? '&' : '?') + 'action=pull&token=' + encodeURIComponent(S.cfg.token);
+    const r = await fetch(u, { redirect: 'follow' });
+    const j = JSON.parse(await r.text());
+    if (!j.ok) throw new Error(j.error || 'ошибка');
+    mergePull(j);
+    S.sync.err = ''; S.sync.last = Date.now();
+    save(); touchLog(); touchPool();
+    if (manual) toast('Обновлено из таблицы');
+    return true;
+  } catch (e) {
+    S.sync.err = String((e && e.message) || e);
+    if (manual) toast('Не получилось: ' + S.sync.err);
+    return false;
+  } finally { pulling = false; save(); render(); }
+}
+
+function mergePull(j) {
+  const ob = S.outbox;
+  const pendSet = new Set(ob.filter(o => o.op === 'set' || o.op === 'delset').map(o => o.id));
+  const pendW = new Set(ob.filter(o => o.op === 'weight').map(o => o.d));
+  const pendS = new Set(ob.filter(o => o.op === 'session').map(o => o.s.sid));
+  const pendE = new Set(ob.filter(o => o.op === 'exercise').map(o => o.ex.id));
+  const pendProg = ob.some(o => o.op === 'program');
+  const activeSid = S.active ? S.active.sid : '';
+
+  if (j.cfg) {
+    ['cycle', 'wStart', 'paceMin', 'paceMax'].forEach(k => { if (j.cfg[k] != null && j.cfg[k] !== '' && !isNaN(+j.cfg[k])) S.cfg[k] = +j.cfg[k]; });
+    if (j.cfg.wStartDate) S.cfg.wStartDate = String(j.cfg.wStartDate);
+  }
+  if (j.pool && j.pool.length) {
+    const sheet = j.pool.map(p => Object.assign({}, p, { step: +p.step || 1, arch: p.arch ? 1 : 0 }));
+    const have = new Set(sheet.map(p => p.id));
+    const keep = S.pool.filter(p => !have.has(p.id) && pendE.has(p.id));
+    const loc = new Map(S.pool.map(p => [p.id, p]));
+    S.pool = sheet.map(p => pendE.has(p.id) && loc.has(p.id) ? loc.get(p.id) : p).concat(keep);
+  }
+  if (j.complexes && j.complexes.length && !pendProg) S.complexes = j.complexes;
+
+  if (j.log) {
+    const loc = new Map(S.log.map(r => [r.id, r]));
+    const seen = new Set();
+    let oldest = Infinity;
+    for (const r of j.log) {
+      seen.add(r.id); oldest = Math.min(oldest, r.ts);
+      if (pendSet.has(r.id)) continue;
+      loc.set(r.id, Object.assign({}, r, { sy: 1 }));
+    }
+    S.log = [...loc.values()].filter(r => seen.has(r.id) || !r.sy || pendSet.has(r.id) || r.sid === activeSid || r.ts < oldest).sort((a, b) => a.ts - b.ts);
+  }
+  if (j.weights) {
+    const loc = new Map(S.weights.map(w => [w.d, w]));
+    const seen = new Set(); let oldest = '9999';
+    for (const w of j.weights) { seen.add(w.d); if (w.d < oldest) oldest = w.d; if (pendW.has(w.d)) continue; loc.set(w.d, { d: w.d, w: +w.w, sy: 1 }); }
+    S.weights = [...loc.values()].filter(w => seen.has(w.d) || !w.sy || pendW.has(w.d) || w.d < oldest).sort((a, b) => a.d < b.d ? -1 : 1);
+  }
+  if (j.sessions) {
+    const loc = new Map(S.sessions.map(s => [s.sid, s]));
+    for (const s of j.sessions) { if (pendS.has(s.sid)) continue; loc.set(s.sid, Object.assign({}, loc.get(s.sid) || {}, s, { fin: 1 })); }
+    S.sessions = [...loc.values()].sort((a, b) => a.start - b.start);
+  }
+}
+
+/* ====== Импорт программы из текста ====== */
+function normName(s) { return String(s).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim(); }
+const LOADMAP = { 'штанга': 'barbell', 'гантель': 'dumbbell', 'гантели': 'dumbbell', 'смит': 'smith', 'тренажер': 'stack', 'тренажёр': 'stack', 'блок': 'stack', 'вес тела': 'bodyweight', 'свой вес': 'bodyweight', 'barbell': 'barbell', 'dumbbell': 'dumbbell', 'smith': 'smith', 'stack': 'stack', 'bodyweight': 'bodyweight' };
+function nextExId(extra) {
+  let m = 0;
+  S.pool.concat(extra || []).forEach(p => { const n = parseInt(String(p.id).replace(/\D/g, ''), 10); if (n > m) m = n; });
+  return 'e' + pad(m + 1);
+}
+function parseProgram(text) {
+  const out = { cycle: S.cfg.cycle, complexes: [], newEx: [], errors: [], warns: [] };
+  const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  // 1) определения новых упражнений
+  for (const l of lines) {
+    if (l[0] !== '+') continue;
+    const p = l.slice(1).split(';').map(x => x.trim());
+    if (!p[0]) { out.errors.push('Пустое имя в строке: ' + l); continue; }
+    const load = LOADMAP[(p[2] || 'тренажёр').toLowerCase()];
+    if (!load) { out.errors.push('Неизвестный тип нагрузки «' + p[2] + '» в: ' + l); continue; }
+    const metric = /сек/i.test(p[3] || '') ? 'sec' : 'reps';
+    const step = parseNum(p[4] || '') || (load === 'barbell' ? 2.5 : 1);
+    out.newEx.push({ id: nextExId(out.newEx), name: p[0], group: p[1] || '', load, metric, step, vg: '', icon: '', tech: '', arch: 0 });
+  }
+  const all = S.pool.concat(out.newEx);
+  const find = nm => {
+    const n = normName(nm);
+    let f = all.filter(p => normName(p.name) === n);
+    if (f.length === 1) return f[0];
+    if (f.length > 1) { const a = f.filter(p => !p.arch); if (a.length === 1) return a[0]; }
+    f = all.filter(p => normName(p.name).startsWith(n) || n.startsWith(normName(p.name)));
+    return f.length === 1 ? f[0] : null;
+  };
+  let cur = null;
+  for (const l of lines) {
+    if (l[0] === '+') continue;
+    let m;
+    if ((m = l.match(/^цикл\s*(\d+)/i))) { out.cycle = +m[1]; continue; }
+    if (l[0] === '#') {
+      const p = l.slice(1).split('·').map(x => x.trim());
+      const key = p[0];
+      const old = cxOf(key);
+      cur = { key, name: p[1] || (old ? old.name : key), sub: p.slice(2).join(' · ') || (old ? old.sub : ''), warm: old ? old.warm : '', items: [] };
+      out.complexes.push(cur);
+      continue;
+    }
+    if (/^разминка\s*:/i.test(l)) { if (cur) cur.warm = l.replace(/^разминка\s*:/i, '').trim(); continue; }
+    if (!cur) { out.warns.push('Строка вне комплекса пропущена: ' + l); continue; }
+    const p = l.split(';').map(x => x.trim());
+    const e = find(p[0]);
+    if (!e) { out.errors.push('Не нашёл упражнение «' + p[0] + '» — добавь его строкой «+ Название; Группа; тип; метрика; шаг»'); continue; }
+    const sets = parseInt(p[1], 10);
+    if (!sets) { out.errors.push('Нет числа подходов у «' + p[0] + '»'); continue; }
+    const rg = String(p[2] || '').match(/(\d+)\s*[-–—]\s*(\d+)/);
+    const rmin = rg ? +rg[1] : (parseInt(p[2], 10) || 8), rmax = rg ? +rg[2] : rmin;
+    let rest = 90; const rs = String(p[3] || '');
+    if (/^\d+:\d+$/.test(rs)) { const [a, b] = rs.split(':').map(Number); rest = a * 60 + b; }
+    else if (parseNum(rs) != null) { const v = parseNum(rs); rest = v <= 10 ? Math.round(v * 60) : Math.round(v); }
+    else out.warns.push('Отдых не указан у «' + e.name + '» — поставил 1:30');
+    let grp = ''; const g = (p[4] || '').match(/связка\s*(\w+)/i); if (g) grp = g[1];
+    cur.items.push({ ex: e.id, sets, rmin, rmax, rest, grp });
+  }
+  if (!out.complexes.length) out.errors.push('Не нашёл ни одного комплекса. Начни с «# A · Жим · подпись».');
+  out.complexes.forEach(c => { if (!c.items.length) out.errors.push('Комплекс ' + c.key + ' пустой'); });
+  return out;
+}
+function applyProgram(pr) {
+  for (const e of pr.newEx) { S.pool.push(e); qop({ op: 'exercise', ex: Object.assign({}, e) }); }
+  S.complexes = pr.complexes; S.cfg.cycle = pr.cycle;
+  touchPool();
+  qop({ op: 'program', cycle: pr.cycle, complexes: clone(pr.complexes) });
+}
+
+/* ====== Экраны ====== */
+const UI = { tab: 'train', sum: null, sheet: null, tech: {}, ask: '', warmOpen: false, pdetail: null };
+
+const ICON_NAV = {
+  train: '<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
+  prog: '<path d="M4 19V5M4 19h16M8 15l4-5 3 3 5-7"/>',
+  weight: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 9.5a5 5 0 0 1 7 0M12 13l2.2-2.6"/>',
+  more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'
+};
+function exIcon(e) { return ICONS[e.icon] || '<svg viewBox="0 0 90 90"><rect width="90" height="90" fill="none"/><text x="45" y="58" text-anchor="middle" font-size="40" font-weight="800" fill="#4a6fa0">' + esc((e.name || '?')[0]) + '</text></svg>'; }
+const unitOf = e => e.metric === 'sec' ? 'с' : '';
+
+function spark(vals, w = 64, h = 28) {
+  if (vals.length < 2) return '<svg width="' + w + '" height="' + h + '"></svg>';
+  const mn = Math.min(...vals), mx = Math.max(...vals), sp = (mx - mn) || 1;
+  const pts = vals.map((v, i) => [2 + i * (w - 4) / (vals.length - 1), h - 3 - (v - mn) / sp * (h - 6)]);
+  const last = pts[pts.length - 1];
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '"><polyline fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + '"/><circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3" fill="var(--or)"/></svg>';
+}
+/* линейный график: series=[{pts:[[x,y]],color,dash,width}] , band={lo:[[x,y]],hi:[[x,y]]} */
+function lineChart(series, band, W = 340, H = 150, xl) {
+  const all = series.flatMap(s => s.pts).concat(band ? band.lo.concat(band.hi) : []);
+  if (all.length < 2) return '<div class="hint">Пока мало данных для графика</div>';
+  const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  if (x1 === x0) x1 = x0 + 1; if (y1 === y0) { y0 -= 1; y1 += 1; }
+  const pd = (y1 - y0) * 0.12; y0 -= pd; y1 += pd;
+  const L = 34, R = 8, T = 8, B = 18;
+  const X = x => L + (x - x0) / (x1 - x0) * (W - L - R), Y = y => T + (1 - (y - y0) / (y1 - y0)) * (H - T - B);
+  let g = '';
+  for (let i = 0; i <= 3; i++) { const v = y0 + (y1 - y0) * i / 3, y = Y(v); g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)" stroke-width="1"/><text x="' + (L - 4) + '" y="' + (y + 3) + '" text-anchor="end">' + fn(r1(v)) + '</text>'; }
+  if (band) {
+    const top = band.hi.map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1));
+    const bot = band.lo.slice().reverse().map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1));
+    g += '<polygon points="' + top.concat(bot).join(' ') + '" fill="var(--ok)" opacity=".18"/>';
+  }
+  for (const s of series) {
+    const pts = s.pts.map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ');
+    if (s.dots) g += s.pts.map(p => '<circle cx="' + X(p[0]).toFixed(1) + '" cy="' + Y(p[1]).toFixed(1) + '" r="' + (s.r || 3) + '" fill="' + s.color + '"/>').join('');
+    if (!s.dots || s.pts.length > 1) g += '<polyline fill="none" stroke="' + s.color + '" stroke-width="' + (s.width || 2) + '" ' + (s.dash ? 'stroke-dasharray="4 3" ' : '') + 'stroke-linejoin="round" stroke-linecap="round" points="' + pts + '"/>';
+  }
+  if (xl) g += '<text x="' + L + '" y="' + (H - 3) + '">' + esc(xl[0]) + '</text><text x="' + (W - R) + '" y="' + (H - 3) + '" text-anchor="end">' + esc(xl[1]) + '</text>';
+  return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' + g + '</svg>';
+}
+
+/* ---------- верхняя панель ---------- */
+function topHtml() {
+  const A = S.active;
+  if (!A || UI.tab !== 'train' || UI.sum) return '';
+  return '<div class="chips"><div class="chip"><small>ТРЕНИРОВКА</small><b class="num" id="tSes">0:00</b></div>' +
+    '<div class="chip rest" id="cRest"><small id="lRest">ОТДЫХ</small><b class="num" id="tRest">—</b></div></div>';
+}
+function tick() {
+  const A = S.active; if (!A) return;
+  const a = $('#tSes'); if (!a) return;
+  const sec = (Date.now() - A.start) / 1000;
+  a.textContent = sec >= 3600 ? Math.floor(sec / 3600) + ':' + pad(Math.floor(sec % 3600 / 60)) + ':' + pad(Math.floor(sec % 60)) : mmss(sec);
+  const t = $('#tRest'), c = $('#cRest'), l = $('#lRest');
+  if (!A.restStart) { t.textContent = '—'; c.classList.remove('over'); l.textContent = 'ОТДЫХ'; return; }
+  const el = (Date.now() - A.restStart) / 1000;
+  t.textContent = mmss(el);
+  l.textContent = A.restPlan ? 'ОТДЫХ · ПЛАН ' + mmss(A.restPlan) : 'ОТДЫХ';
+  const over = A.restPlan && el >= A.restPlan;
+  c.classList.toggle('over', !!over);
+  if (over && !A.beeped) { A.beeped = true; save(); beep(); }
+}
+
+/* ---------- главный экран ---------- */
+function weightCard() {
+  const d = dstr(), cur = weightOn(d);
+  const val = wval();
+  const avg = avgRange(addDays(d, -6), d);
+  return '<div class="card wcard"><div class="top"><div><small style="color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.05em">ВЕС СЕГОДНЯ</small>' +
+    '<div><button class="val num" data-a="wnumday" data-v="' + d + '">' + fn(val) + '<small> кг</small></button></div></div>' +
+    '<button class="go ' + (cur != null ? 'done' : '') + '" data-a="wsave" data-v="' + d + '">' + (cur != null ? '✓ записан' : 'Записать') + '</button></div>' +
+    '<div class="avg">' + (avg != null ? 'Среднее за 7 дней: <b>' + fn(r1(avg)) + ' кг</b>' : 'Среднее появится после нескольких взвешиваний') + '</div></div>';
+}
+function viewHome() {
+  const A = S.active;
+  const nxt = nextComplex();
+  let h = '<div class="date">' + DOW[new Date().getDay()] + ', ' + dlabel(dstr()) + ' · цикл ' + S.cfg.cycle + '</div><h1>Тренировка</h1>';
+  h += weightCard();
+  if (A) {
+    const n = sessionRows(A.sid).length;
+    h += '<h2>Сейчас идёт</h2><div class="hero"><span class="tag">В ПРОЦЕССЕ</span><div class="big">' + esc(cxLabel(A.cx)) + '</div><p>Подходов записано: ' + n + '</p><button class="btn or" data-a="resume">Продолжить</button></div>';
+  } else if (nxt) {
+    const c = cxOf(nxt), ls = lastSessionOf(nxt);
+    h += '<h2>Следующая по очереди</h2><div class="hero"><span class="tag">ЦИКЛ ' + S.cfg.cycle + '</span><div class="big">' + esc(nxt) + ' · <i>' + esc(c.name) + '</i></div>' +
+      '<p>' + c.items.length + ' упр. · около ' + estMin(nxt) + ' мин · ' + (ls ? 'прошлый раз ' + dlabel(ls.d) : 'ещё не делал в этом цикле') + '</p>' +
+      '<button class="btn or" data-a="start" data-v="' + esc(nxt) + '">Начать тренировку</button></div>';
+  }
+  if (!A) {
+    const others = S.complexes.filter(c => c.key !== nxt);
+    h += '<h2>Другой комплекс</h2>';
+    for (const c of others) {
+      const ls = lastSessionOf(c.key);
+      h += '<div class="card"><button class="crow" data-a="start" data-v="' + esc(c.key) + '"><span class="ltr">' + esc(c.key) + '</span><span><b>' + esc(c.name) + '</b><small>' + (ls ? 'последний раз ' + dlabel(ls.d) : 'ещё не делал') + '</small></span><span class="go">›</span></button></div>';
+    }
+    h += '<div class="card"><button class="crow" data-a="start" data-v="F"><span class="ltr">+</span><span><b>Свободная тренировка</b><small>без плана, упражнения добавляешь сам</small></span><span class="go">›</span></button></div>';
+  }
+  const rec = S.sessions.filter(s => s.fin).sort((a, b) => b.start - a.start).slice(0, 5);
+  if (rec.length) {
+    h += '<h2>Последние</h2><div class="recent">';
+    for (const s of rec) h += '<button class="rrow" data-a="opensum" data-v="' + esc(s.sid) + '"><b>' + dlabel(s.d) + '</b><span>' + esc(s.cx === 'F' ? 'Свободная' : s.cx + ' · ' + cxName(s.cx)) + ' <small>' + s.sets + ' подх.' + (s.prs ? ' · 🏆' + s.prs : '') + '</small></span><small class="num">' + (s.min > 0 ? s.min + ' мин' : '') + '</small></button>';
+    h += '</div>';
+  }
+  h += '<div class="syncline ' + syncState() + '" id="syncline">' + esc(syncText()) + '</div>';
+  return h;
+}
+
+/* ---------- экран тренировки ---------- */
+function viewSession() {
+  const A = S.active;
+  let h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><h1 style="margin:2px 0">' + esc(cxLabel(A.cx)) + '</h1></div>';
+  const anySets = sessionRows(A.sid).length > 0;
+  const c = cxOf(A.cx);
+  if (c && c.warm && !A.warmEnd && !anySets) {
+    h += '<div class="warm"><b>Разминка · ~7 мин</b><p>' + esc(c.warm) + '</p><button class="btn sm or" style="margin-top:10px" data-a="warmdone">Разминка готова</button></div>';
+  } else if (c && c.warm && A.warmEnd) {
+    h += '<div class="hint" style="margin-top:4px">Разминка закончена в ' + new Date(A.warmEnd).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + '</div>';
+  }
+  A.items.forEach((it, i) => {
+    if (i === A.cur) h += exCard(i);
+    else h += itemRow(i);
+  });
+  h += '<button class="btn" style="margin-top:12px" data-a="addex">+ Добавить упражнение</button>';
+  h += '<button class="btn or" style="margin-top:10px" data-a="finish">Завершить тренировку</button>';
+  return h;
+}
+function itemRow(i) {
+  const A = S.active, it = A.items[i], id = it.use || it.ex, e = EX(id);
+  const done = itemDone(A, it), w = itemWork(A, it);
+  const sets = setsOf(A.sid, id).filter(isWork);
+  const last = sets.length ? sets[sets.length - 1] : null;
+  return '<button class="irow ' + (it.skip ? 'skip ' : (w >= it.sets ? 'done ' : '')) + (it.grp ? 'lnk' : '') + '" data-a="open" data-i="' + i + '">' +
+    '<span class="st">' + (it.skip ? '–' : (w >= it.sets ? '✓' : (i + 1))) + '</span>' +
+    '<span><span class="nm">' + esc(e.name) + '</span>' + (it.grp ? '<span class="lnk-tag">СВЯЗКА</span>' : '') + (it.rep ? '<span class="lnk-tag" style="color:var(--blue)">ЗАМЕНА</span>' : '') +
+    '<br><span class="pg">' + (it.skip ? 'пропущено' : w + ' / ' + it.sets + (last ? ' · ' + fn(last.w) + '×' + last.r : '')) + '</span></span>' +
+    '<span class="pg num">' + (it.skip ? '' : mmss(it.rest)) + '</span></button>';
+}
+function wLabel(e) {
+  switch (e.load) {
+    case 'barbell': return 'ВЕС · КГ (ВМЕСТЕ С ГРИФОМ)';
+    case 'dumbbell': return 'ОДНА ГАНТЕЛЬ · КГ';
+    case 'smith': return 'БЛИНЫ · КГ';
+    case 'bodyweight': return 'ДОП. ВЕС · КГ';
+    default: return 'ВЕС · КГ';
+  }
+}
+function exCard(i) {
+  const A = S.active, it = A.items[i], id = it.use || it.ex, e = EX(id);
+  const d = draft(it), done = setsOf(A.sid, id);
+  const work = done.filter(isWork).length;
+  const sec = e.metric === 'sec';
+  const ses = exSessions(id, A.sid), lastS = ses.length ? ses[ses.length - 1] : null;
+  let h = '<div class="ex" id="ex"><div class="ex-h"><div class="ex-img">' + exIcon(e) + '</div><div style="min-width:0;flex:1"><div class="nm">' + esc(e.name) + '</div>' +
+    '<div class="sch">' + it.sets + ' × ' + it.rmin + (it.rmax !== it.rmin ? '–' + it.rmax : '') + (sec ? ' с' : '') + ' · отдых ' + mmss(it.rest) + (it.grp ? ' · связка' : '') + '</div>' +
+    (it.rep ? '<div class="sch">вместо: ' + esc(EX(it.ex).name) + '</div>' : '') +
+    (progressUp(it) ? '<span class="up" style="margin:4px 0 0">↑ повышай вес</span>' : '') + '</div></div>';
+  const vs = variantsOf(it.ex);
+  if (vs.length > 1 && !it.rep) h += '<div class="vars">' + vs.map(v => '<button class="' + (v.id === id ? 'on' : '') + '" data-a="variant" data-v="' + v.id + '">' + esc(v.name.replace(/^.*?\s(в|на)\s/, '')) + '</button>').join('') + '</div>';
+  h += '<div class="dots">' + Array.from({ length: Math.max(it.sets, work) }, (_, k) => '<i class="' + (k < work ? (k < it.sets ? 'd' : 'x') : (k === work ? 'c' : '')) + '"></i>').join('') + '</div>';
+  if (lastS) {
+    const best = bestRec(id, A.sid);
+    const parts = lastS.sets.filter(r => r.df !== 'разминка').map(r => '<b>' + fn(r.w) + '×' + r.r + (sec ? 'с' : '') + '</b>' + (r.ty === 'дроп' ? '↓' : '')).join(' · ');
+    h += '<div class="last">Прошлый раз · ' + dlabel(lastS.d) + ': ' + parts + (best && best.e1 ? '<br>Лучший: ' + fn(best.w) + '×' + best.r + ' (1ПМ ≈ ' + fn(best.e1) + ')' : '') + '</div>';
+  } else h += '<div class="last">Раньше это упражнение не записывалось — введи вес сам.</div>';
+  if (e.tech || BIG[e.icon]) {
+    const open = !!UI.tech[id];
+    h += '<div class="tech"><button class="tb" data-a="tech" data-v="' + id + '">Как делать ' + (open ? '▴' : '▾') + '</button>' +
+      (open ? (BIG[e.icon] ? '<div class="big">' + BIG[e.icon] + '</div>' : '') + (e.tech ? '<p>' + esc(e.tech) + '</p>' : '') : '') + '</div>';
+  }
+  const isDrop = d.ty === 'дроп';
+  h += '<div class="set">ПОДХОД ' + (work + (d.df === 'разминка' ? 0 : 1)) + (isDrop ? ' <span class="tt">ДРОП</span>' : '') + (d.df === 'разминка' ? ' <span class="tt">РАЗМИНОЧНЫЙ</span>' : '') + '</div>';
+  const wv = d.w > 0 || e.load === 'bodyweight' ? (d.w > 0 ? fn(d.w) : 'своё') : '—';
+  h += '<div class="steps"><div class="step"><small>' + wLabel(e) + '</small><div class="n"><button class="pm" data-a="wstep" data-v="-1" aria-label="меньше">−</button><button class="v num" data-a="wnum">' + wv + '</button><button class="pm" data-a="wstep" data-v="1" aria-label="больше">+</button></div>' +
+    '<small>' + (e.load === 'dumbbell' && d.w > 0 ? '2 × ' + fn(d.w) + ' = ' + fn(d.w * 2) + ' кг' : '&nbsp;') + '</small></div>' +
+    '<div class="step"><small>' + (sec ? 'СЕКУНДЫ' : 'ПОВТОРЫ') + '</small><div class="n"><button class="pm" data-a="rstep" data-v="-1" aria-label="меньше">−</button><button class="v num" data-a="rnum">' + d.r + '</button><button class="pm" data-a="rstep" data-v="1" aria-label="больше">+</button></div><small>&nbsp;</small></div></div>';
+  const hw = histWeights(id);
+  if (hw.length) h += '<div class="qw"><span class="lb">из истории</span>' + hw.map(w => '<button class="' + (w === d.w ? 'on' : '') + '" data-a="qw" data-v="' + w + '">' + fn(w) + '</button>').join('') + '</div>';
+  h += '<div class="types">' + TYPES.map(t => '<button class="' + (d.ty === t ? 'on' : '') + '" data-a="ty" data-v="' + t + '">' + t + '</button>').join('') + (isDrop ? '<button class="on" data-a="ty" data-v="норм">дроп ✕</button>' : '') + '</div>';
+  h += '<div class="diff">' + DF.map(k => '<button class="d-' + DFC[k] + ' ' + (d.df === k ? 'on' : '') + '" data-a="df" data-v="' + k + '"><span>' + k + '</span></button>').join('') + '</div>';
+  h += '<div class="logrow"><button class="btn or" data-a="log">' + (isDrop ? 'Записать дроп' : 'Записать подход') + '</button>' + (done.length && !isDrop ? '<button class="btn dropb" data-a="drop">+ дроп</button>' : '') + '</div>';
+  if (done.length) h += '<div class="dn">' + done.map(r => '<button class="sc ' + (r.ty === 'дроп' ? 'drop' : '') + '" data-a="editset" data-v="' + r.id + '">' + (r.ty === 'дроп' ? '↓ ' : '') + fn(r.w) + '×' + r.r + (r.m === 'sec' ? 'с' : '') + (r.df === 'разминка' ? ' р' : '') + (r.pr ? ' 🏆' : '') + '</button>').join('') + '</div>';
+  h += '<div class="mini"><button data-a="replace">Заменить</button><button class="' + (UI.ask === 'skip' ? 'ask' : '') + '" data-a="skip">' + (UI.ask === 'skip' ? 'Точно?' : 'Пропустить') + '</button><button data-a="note">Заметка' + (it.note || it.pnote ? ' •' : '') + '</button></div>';
+  if (itemWork(A, it) >= it.sets) h += '<button class="btn sm" style="margin-top:10px" data-a="next">К следующему упражнению ›</button>';
+  return h + '</div>';
+}
+
+/* ---------- итог тренировки ---------- */
+function viewSummary(sid) {
+  const s = S.sessions.find(x => x.sid === sid);
+  if (!s) return '<h1>Не нашёл тренировку</h1><button class="btn" data-a="closesum">Назад</button>';
+  const rows = sessionRows(sid);
+  const times = exTimes(sid, s.warmEnd || s.start).filter(t => t.sec > 0);
+  const mx = Math.max(1, ...times.map(t => t.sec)), avg = times.length ? times.reduce((a, t) => a + t.sec, 0) / times.length : 0;
+  const prs = rows.filter(r => r.pr);
+  let h = '<div class="date">' + dlabel(s.d) + '</div><h1>Тренировка завершена</h1>';
+  h += '<div class="sum"><div class="k">' + esc(cxLabel(s.cx)).toUpperCase() + '</div><div class="bg num">' + s.min + ' <small>мин всего</small></div><div class="s2">рабочая часть ' + s.wmin + ' мин' + (s.warmEnd ? ' · разминка ' + Math.max(0, Math.round((s.warmEnd - s.start) / 60000)) + ' мин' : '') + '</div></div>';
+  h += '<div class="kp"><div><b class="num">' + s.sets + '</b><small>подходов</small></div><div><b class="num">' + s.prs + '</b><small>рекордов</small></div><div><b class="num">' + (s.subs + s.skips) + '</b><small>замен / пропусков</small></div></div>';
+  if (times.length) {
+    h += '<h2>Время по упражнениям</h2><div class="bars">' + times.map(t => '<div class="bar"><span>' + esc(EX(t.ex).name) + '</span><span class="t"><i class="' + (t.sec > avg * 1.4 ? 'long' : '') + '" style="width:' + Math.round(t.sec / mx * 100) + '%"></i></span><span class="num">' + Math.round(t.sec / 60) + ' м</span></div>').join('') + '</div>';
+  }
+  if (prs.length) h += '<h2>Рекорды</h2><div class="bars prs">' + prs.map(r => '🏆 <b>' + esc(EX(r.ex).name) + '</b> — ' + fn(r.w) + '×' + r.r + (r.m === 'sec' ? 'с' : '') + (r.e1 ? ' (1ПМ ≈ ' + fn(r.e1) + ')' : '')).join('<br>') + '</div>';
+  h += '<div class="field"><label>Заметка к тренировке</label><textarea data-f="snote" data-sid="' + esc(sid) + '" placeholder="Как самочувствие, что мешало…">' + esc(s.note || '') + '</textarea></div>';
+  h += '<div class="syncline ' + syncState() + '" id="syncline">' + esc(syncText()) + '</div>';
+  h += '<button class="btn or" style="margin-top:14px" data-a="closesum">Готово</button>';
+  return h;
+}
+
+/* ---------- прогресс ---------- */
+function exSeries(id) { return exSessions(id).map(s => ({ d: s.d, v: Math.max(0, ...s.sets.map(r => isWork(r) ? valOf(r) : 0)), sets: s.sets })); }
+function viewProgress() {
+  const ids = S.pool.filter(p => !p.arch || (idx()[p.id] || []).length).map(p => p.id).filter(id => (idx()[id] || []).length);
+  let h = '<h1>Прогресс</h1>';
+  const since = addDays(dstr(), -14);
+  const prs = S.log.filter(r => r.pr && r.d >= since).sort((a, b) => b.ts - a.ts).slice(0, 6);
+  if (prs.length) h += '<h2>Рекорды за 2 недели</h2><div class="bars prs">' + prs.map(r => '🏆 ' + dlabel(r.d) + ' · <b>' + esc(EX(r.ex).name) + '</b> — ' + fn(r.w) + '×' + r.r + (r.m === 'sec' ? 'с' : '')).join('<br>') + '</div>';
+  h += '<h2>Упражнения</h2>';
+  if (!ids.length) h += '<div class="hint">Здесь появятся графики, когда будут записаны первые подходы.</div>';
+  const order = []; S.complexes.forEach(c => c.items.forEach(i => { const u = lastVariant(i.ex); if (!order.includes(u)) order.push(u); }));
+  const sorted = ids.slice().sort((a, b) => { const ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+  for (const id of sorted) {
+    const e = EX(id), ser = exSeries(id), vals = ser.map(s => s.v), last = ser[ser.length - 1];
+    const dlt = vals.length > 1 && vals[0] > 0 ? Math.round((vals[vals.length - 1] / vals[0] - 1) * 100) : null;
+    h += '<button class="prow" data-a="pdetail" data-v="' + id + '"><span><b>' + esc(e.name) + '</b><small>' + dlabel(last.d) + ' · ' + last.sets.filter(isWork).slice(0, 4).map(r => fn(r.w) + '×' + r.r).join(', ') + '</small>' + (dlt != null && dlt > 0 ? '<span class="up">+' + dlt + '%</span>' : '') + '</span>' + spark(vals.slice(-10)) + '</button>';
+  }
+  return h;
+}
+
+/* ---------- вес ---------- */
+function viewWeight() {
+  const d = dstr(), cur = weightOn(d);
+  const val = wval();
+  let h = '<h1>Вес</h1><div class="card wcard"><small style="color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.05em">УТРО · ' + dlabel(d).toUpperCase() + '</small>' +
+    '<div class="steps" style="grid-template-columns:1fr;margin-top:4px"><div class="step" style="border:0;padding:0"><div class="n"><button class="pm" data-a="wday" data-v="-0.1">−</button><button class="v num" data-a="wnumday" data-v="' + d + '">' + fn(val) + '</button><button class="pm" data-a="wday" data-v="0.1">+</button></div></div></div>' +
+    '<button class="btn or" style="margin-top:10px" data-a="wsave" data-v="' + d + '">' + (cur != null ? 'Обновить запись' : 'Записать вес') + '</button></div>';
+  const a7 = avgRange(addDays(d, -6), d), p7 = avgRange(addDays(d, -13), addDays(d, -7));
+  const co = corridor(d);
+  if (a7 != null) {
+    const ch = p7 != null ? a7 - p7 : null;
+    let st = 'в коридоре', cl = 'ok';
+    if (a7 < co.lo - 0.15) { st = 'ниже коридора'; cl = 'wait'; } else if (a7 > co.hi + 0.15) { st = 'выше коридора'; cl = 'wait'; }
+    h += '<div class="card"><div class="kp" style="margin:0"><div><b class="num">' + fn(r1(a7)) + '</b><small>среднее 7 дн.</small></div><div><b class="num">' + (ch == null ? '—' : (ch > 0 ? '+' : '') + fn(r2(ch))) + '</b><small>к прошлой неделе</small></div><div><b class="num">' + fn(r1(co.lo)) + '–' + fn(r1(co.hi)) + '</b><small>коридор сегодня</small></div></div><div class="syncline ' + cl + '">Среднее: ' + st + '</div></div>';
+  }
+  const from = addDays(d, -41);
+  const ws = S.weights.filter(w => w.d >= from);
+  if (ws.length >= 2) {
+    const x = s => daysBetween(from, s);
+    const avgPts = ws.map(w => [x(w.d), avgRange(addDays(w.d, -6), w.d)]).filter(p => p[1] != null);
+    const days = [x(ws[0].d), x(d)];
+    const band = { lo: days.map(k => [k, corridor(addDays(from, k)).lo]), hi: days.map(k => [k, corridor(addDays(from, k)).hi]) };
+    h += '<h2>Динамика · 6 недель</h2><div class="card">' + lineChart([{ pts: ws.map(w => [x(w.d), w.w]), color: 'var(--muted)', dots: true, r: 2.5, width: 1.2 }, { pts: avgPts, color: 'var(--or)', width: 2.5 }], band, 340, 170, [dlabel(ws[0].d), dlabel(d)]) + '<div class="hint" style="margin:4px 0 0">серые точки — взвешивания · оранжевая — среднее за 7 дней · зелёная полоса — целевой коридор</div></div>';
+  }
+  const rec = S.weights.slice(-10).reverse();
+  if (rec.length) h += '<h2>Записи</h2><div class="recent">' + rec.map(w => '<button class="rrow" data-a="wnumday" data-v="' + w.d + '"><b>' + dlabel(w.d) + '</b><span>' + dow(w.d) + '</span><b class="num">' + fn(w.w) + '</b></button>').join('') + '</div>';
+  return h;
+}
+
+/* ---------- ещё ---------- */
+function viewMore() {
+  let h = '<h1>Ещё</h1><h2>Подключение к таблице</h2><div class="card">' +
+    '<div class="field" style="margin-top:0"><label>Адрес скрипта (Web app URL)</label><input data-f="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" value="' + esc(UI.conn && UI.conn.url != null ? UI.conn.url : S.cfg.url) + '"></div>' +
+    '<div class="field"><label>Пароль (тот же, что в скрипте)</label><input data-f="token" type="password" autocomplete="off" value="' + esc(UI.conn && UI.conn.token != null ? UI.conn.token : S.cfg.token) + '"></div>' +
+    '<div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="btn sm or" data-a="saveconn">Сохранить</button><button class="btn sm" data-a="pullnow">Обновить из таблицы</button></div>' +
+    '<div class="syncline ' + syncState() + '" id="syncline">' + esc(syncText()) + '</div>' +
+    (S.outbox.length ? '<button class="btn sm" style="margin-top:8px" data-a="flushnow">Отправить очередь сейчас</button>' : '') + '</div>';
+  h += '<h2>Программа</h2><div class="card"><b style="color:var(--navy)">Цикл ' + S.cfg.cycle + '</b><div class="hint" style="margin:2px 0 10px">' + S.complexes.map(c => c.key + ': ' + c.items.length + ' упр.').join(' · ') + '</div><button class="btn sm" data-a="progimport">Загрузить новую программу</button></div>';
+  h += '<h2>Упражнения</h2><div class="card">' + S.pool.slice().sort((a, b) => a.arch - b.arch || a.group.localeCompare(b.group, 'ru')).map(p => '<button class="exl ' + (p.arch ? 'arch' : '') + '" data-a="exmenu" data-v="' + p.id + '"><span>' + esc(p.name) + '<br><small>' + esc(p.group) + ' · ' + LOADS[p.load] + (p.arch ? ' · в архиве' : '') + '</small></span><span style="color:var(--muted)">›</span></button>').join('') + '<button class="btn sm" style="margin-top:10px" data-a="newex">+ Своё упражнение</button></div>';
+  h += '<h2>Прочее</h2><div class="card"><div class="sw"><span>Звук по окончании отдыха</span><button class="' + (S.cfg.sound ? 'on' : '') + '" data-a="sound" aria-label="звук"></button></div>' +
+    '<button class="btn sm" style="margin-top:8px" data-a="backup">Скопировать резервную копию данных</button>' +
+    '<div class="hint">Версия ' + VERSION + ' · записей в телефоне: ' + S.log.length + '</div></div>';
+  return h;
+}
+
+/* ---------- каркас ---------- */
+function render() {
+  const A = S.active;
+  document.body.classList.toggle('has-top', !!(A && UI.tab === 'train' && !UI.sum));
+  $('#top').innerHTML = topHtml();
+  let h;
+  if (UI.tab === 'train') h = UI.sum ? viewSummary(UI.sum) : (A ? viewSession() : viewHome());
+  else if (UI.tab === 'prog') h = viewProgress();
+  else if (UI.tab === 'weight') h = viewWeight();
+  else h = viewMore();
+  $('#app').innerHTML = h;
+  const st = syncState();
+  $('#nav').innerHTML = [['train', 'Тренировка'], ['prog', 'Прогресс'], ['weight', 'Вес'], ['more', 'Ещё']].map(([k, n]) =>
+    '<button data-a="tab" data-v="' + k + '" class="' + (UI.tab === k ? 'on' : '') + '" aria-label="' + n + '"><svg viewBox="0 0 24 24">' + ICON_NAV[k] + '</svg>' + n + (k === 'more' ? '<i class="sdot ' + st + '"></i>' : '') + '</button>').join('');
+  tick();
+}
+function uiSync() {
+  const el = $('#syncline');
+  if (el) { el.className = 'syncline ' + syncState(); el.textContent = syncText(); }
+  const d = document.querySelector('.sdot'); if (d) d.className = 'sdot ' + syncState();
+}
+let toastT = 0;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200);
+}
+
+/* ====== Окна, действия, запуск ====== */
+let AC = null, WL = null;
+function unlockAudio() { try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { } }
+function beep() {
+  try { if (navigator.vibrate) navigator.vibrate([200, 80, 200]); } catch (e) { }
+  if (!S.cfg.sound || !AC) return;
+  try {
+    [0, 0.3].forEach(t => {
+      const o = AC.createOscillator(), g = AC.createGain(), T = AC.currentTime + t;
+      o.frequency.value = 880; o.connect(g); g.connect(AC.destination);
+      g.gain.setValueAtTime(0.0001, T); g.gain.exponentialRampToValueAtTime(0.4, T + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, T + 0.22);
+      o.start(T); o.stop(T + 0.24);
+    });
+  } catch (e) { }
+}
+async function wake() {
+  try { if (S.active && !WL && 'wakeLock' in navigator) { WL = await navigator.wakeLock.request('screen'); WL.addEventListener('release', () => { WL = null; }); } } catch (e) { }
+}
+function unwake() { try { if (WL) WL.release(); } catch (e) { } WL = null; }
+
+/* ---------- окна ---------- */
+function fv(name, dflt) { return UI.sheet && UI.sheet.f && name in UI.sheet.f ? UI.sheet.f[name] : dflt; }
+function collect() {
+  if (!UI.sheet) return;
+  UI.sheet.f = UI.sheet.f || {};
+  document.querySelectorAll('#sheet [data-f]').forEach(el => { UI.sheet.f[el.dataset.f] = el.value; });
+}
+function openSheet(o) { UI.sheet = Object.assign({ f: {} }, o); renderSheet(); }
+function closeSheet() { UI.sheet = null; renderSheet(); }
+function openNum(title, val, cb, unit) { openSheet({ kind: 'num', title, val, cb, unit: unit || '' }); }
+
+function pickList() {
+  const sh = UI.sheet, A = S.active, q = normName(fv('q', ''));
+  const used = new Set(A ? A.items.map(i => i.use || i.ex) : []);
+  let list = S.pool.filter(p => !p.arch && (sh.mode !== 'add' || !used.has(p.id)) && (!q || normName(p.name + ' ' + p.group).includes(q)));
+  if (sh.mode === 'rep') { const g = EX(A.items[A.cur].ex).group; list.sort((a, b) => (b.group === g) - (a.group === g)); }
+  return list.map(p => '<button class="pick" data-a="pickex" data-v="' + p.id + '"><span><b>' + esc(p.name) + '</b><br><small>' + esc(p.group) + ' · ' + LOADS[p.load] + '</small></span></button>').join('') || '<div class="hint">Ничего не найдено</div>';
+}
+function pdText(id) {
+  return exSeries(id).slice(-8).reverse().map(s => '<div class="rrow"><b>' + dlabel(s.d) + '</b><span>' + s.sets.filter(r => r.df !== 'разминка').map(r => (r.ty === 'дроп' ? '↓' : '') + fn(r.w) + '×' + r.r).join(', ') + '</span><small></small></div>').join('');
+}
+const SHEETS = {
+  num: s => '<h3>' + esc(s.title) + '</h3><input data-f="v" data-focus inputmode="decimal" autocomplete="off" value="' + esc(fv('v', s.val)) + '"><div class="row2"><button class="btn" data-a="shclose">Отмена</button><button class="btn or" data-a="numok">Готово</button></div>',
+  confirm: s => '<h3>' + esc(s.title) + '</h3><div class="hint" style="margin:0 0 4px">' + esc(s.text || '') + '</div><div class="row2"><button class="btn" data-a="shclose">' + esc(s.no || 'Отмена') + '</button><button class="btn or" data-a="confirmok">' + esc(s.yes || 'Да') + '</button></div>',
+  pick: s => '<h3>' + (s.mode === 'rep' ? 'Заменить упражнение' : 'Добавить упражнение') + '</h3>' +
+    (s.mode === 'rep' && S.active.items[S.active.cur].rep ? '<button class="pick" data-a="pickex" data-v="' + S.active.items[S.active.cur].ex + '"><span><b>↩ Вернуть исходное</b><br><small>' + esc(EX(S.active.items[S.active.cur].ex).name) + '</small></span></button>' : '') +
+    '<input data-f="q" placeholder="Поиск…" value="' + esc(fv('q', '')) + '" autocomplete="off"><div class="list" id="plist">' + pickList() + '</div><button class="btn sm" style="margin-top:10px" data-a="newex">+ Своё упражнение</button><button class="btn sm ghost" style="margin-top:6px" data-a="shclose">Закрыть</button>',
+  newex: s => {
+    const groups = [...new Set(S.pool.map(p => p.group).filter(Boolean))];
+    return '<h3>' + (s.edit ? 'Упражнение' : 'Новое упражнение') + '</h3>' +
+      '<div class="field" style="margin-top:0"><label>Название</label><input data-f="n" data-focus value="' + esc(fv('n', s.edit ? s.edit.name : '')) + '"></div>' +
+      '<div class="field"><label>Группа мышц</label><input data-f="g" list="grps" value="' + esc(fv('g', s.edit ? s.edit.group : '')) + '"><datalist id="grps">' + groups.map(g => '<option value="' + esc(g) + '">').join('') + '</datalist></div>' +
+      '<div class="field"><label>Как считается вес</label><select data-f="l">' + Object.keys(LOADS).map(k => '<option value="' + k + '"' + (fv('l', s.edit ? s.edit.load : 'stack') === k ? ' selected' : '') + '>' + LOADS[k] + (k === 'dumbbell' ? ' (вводишь одну, считаю пару)' : k === 'smith' ? ' (только блины)' : k === 'bodyweight' ? ' (вводишь доп. вес)' : k === 'barbell' ? ' (вместе с грифом)' : '') + '</option>').join('') + '</select></div>' +
+      '<div class="field"><label>Что меряем</label><select data-f="m"><option value="reps"' + (fv('m', s.edit ? s.edit.metric : 'reps') === 'reps' ? ' selected' : '') + '>Повторы</option><option value="sec"' + (fv('m', s.edit ? s.edit.metric : 'reps') === 'sec' ? ' selected' : '') + '>Секунды</option></select></div>' +
+      '<div class="field"><label>Шаг веса, кг</label><input data-f="st" inputmode="decimal" value="' + esc(fv('st', s.edit ? s.edit.step : 2.5)) + '"></div>' +
+      (s.edit ? '<div class="field"><label>Техника (коротко)</label><textarea data-f="t">' + esc(fv('t', s.edit.tech || '')) + '</textarea></div>' : '') +
+      '<div class="row2"><button class="btn" data-a="shclose">Отмена</button><button class="btn or" data-a="newexok">Сохранить</button></div>' +
+      (s.edit ? '<button class="btn sm danger" style="margin-top:10px" data-a="exarch">' + (s.edit.arch ? 'Вернуть из архива' : 'В архив (история сохранится)') + '</button>' : '');
+  },
+  edit: s => {
+    const e = s.e;
+    return '<h3>Подход · ' + esc(EX(e.ex).name) + '</h3><div class="steps" style="margin-top:0"><div class="step"><small>' + wLabel(EX(e.ex)) + '</small><input data-f="ew" inputmode="decimal" value="' + esc(fv('ew', fn(e.w))) + '" style="text-align:center;margin-top:6px"></div><div class="step"><small>' + (e.m === 'sec' ? 'СЕКУНДЫ' : 'ПОВТОРЫ') + '</small><input data-f="er" inputmode="numeric" value="' + esc(fv('er', e.r)) + '" style="text-align:center;margin-top:6px"></div></div>' +
+      '<div class="diff">' + DF.map(k => '<button class="d-' + DFC[k] + ' ' + (fv('edf', e.df) === k ? 'on' : '') + '" data-a="sdf" data-v="' + k + '"><span>' + k + '</span></button>').join('') + '</div>' +
+      '<div class="types">' + ['норм', 'рест-пауза', 'негатив', 'дроп'].map(t => '<button class="' + (fv('ety', e.ty) === t ? 'on' : '') + '" data-a="sty" data-v="' + t + '">' + t + '</button>').join('') + '</div>' +
+      '<div class="row2"><button class="btn danger" data-a="delset">Удалить</button><button class="btn or" data-a="editok">Сохранить</button></div>';
+  },
+  note: s => '<h3>Заметка</h3><textarea data-f="nt" data-focus placeholder="Что важно запомнить про это упражнение сегодня">' + esc(fv('nt', s.text || '')) + '</textarea><div class="row2"><button class="btn" data-a="shclose">Отмена</button><button class="btn or" data-a="noteok">Сохранить</button></div>',
+  pd: s => { const e = EX(s.id), ser = exSeries(s.id); return '<h3>' + esc(e.name) + '</h3>' + lineChart([{ pts: ser.map((x, i) => [i, x.v]), color: 'var(--blue)', dots: true, r: 3, width: 2 }], null, 340, 150, ser.length > 1 ? [dlabel(ser[0].d), dlabel(ser[ser.length - 1].d)] : null) + '<div class="hint" style="margin:0 0 6px">' + (e.metric === 'sec' ? 'лучшее время в сессии' : 'лучший расчётный 1ПМ в сессии, кг') + '</div><div class="recent">' + pdText(s.id) + '</div><button class="btn sm" style="margin-top:10px" data-a="shclose">Закрыть</button>'; },
+  prog: s => '<h3>Новая программа</h3><div class="hint" style="margin:0 0 6px">Вставь текст программы, который я подготовил. Проверка ничего не меняет, пока не нажмёшь «Применить».</div><textarea data-f="ptxt" data-focus placeholder="ЦИКЛ 4&#10;# A · Жим · грудь · плечи&#10;Разминка: …&#10;Жим штанги лёжа классический; 4; 6-8; 2:30" style="min-height:150px">' + esc(fv('ptxt', '')) + '</textarea>' +
+    (s.pr ? '<div class="pre">' + progPreview(s.pr) + '</div>' : '') +
+    '<div class="row2"><button class="btn" data-a="shclose">Закрыть</button>' + (s.pr && !s.pr.errors.length ? '<button class="btn or" data-a="progok">Применить</button>' : '<button class="btn or" data-a="progcheck">Проверить</button>') + '</div>'
+};
+function progPreview(pr) {
+  let t = 'Цикл ' + pr.cycle + '\n';
+  pr.complexes.forEach(c => { t += '\n' + c.key + ' · ' + c.name + ' — ' + c.items.length + ' упр.\n' + c.items.map(i => '  ' + (pr.newEx.find(n => n.id === i.ex) || EX(i.ex)).name + (pr.newEx.find(n => n.id === i.ex) ? ' (новое)' : '') + ' — ' + i.sets + '×' + i.rmin + (i.rmax !== i.rmin ? '–' + i.rmax : '') + ', ' + mmss(i.rest) + (i.grp ? ', связка ' + i.grp : '')).join('\n'); });
+  if (pr.newEx.length) t += '\n\nНовых упражнений: ' + pr.newEx.length;
+  if (pr.warns.length) t += '\n\nЗамечания:\n' + pr.warns.join('\n');
+  if (pr.errors.length) t += '\n\nОШИБКИ:\n' + pr.errors.join('\n');
+  return esc(t);
+}
+function renderSheet() {
+  const el = $('#sheet');
+  if (!UI.sheet) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = '<div class="sh">' + SHEETS[UI.sheet.kind](UI.sheet) + '</div>';
+  const f = el.querySelector('[data-focus]');
+  if (f) { try { f.focus(); if (f.select && f.tagName === 'INPUT') f.select(); } catch (e) { } }
+}
+
+/* ---------- действия ---------- */
+const cur = () => { const A = S.active; return A ? A.items[A.cur] : null; };
+function scrollEx() { setTimeout(() => { const e = $('#ex'); if (e) window.scrollTo({ top: Math.max(0, e.offsetTop - 70), behavior: 'smooth' }); }, 30); }
+function wval() {
+  const d = dstr(), c = weightOn(d), last = S.weights.length ? S.weights[S.weights.length - 1] : null;
+  return UI.wDraft != null ? UI.wDraft : (c != null ? c : (last ? last.w : 80));
+}
+function saveWeight(d, w) {
+  w = r1(w);
+  if (!(w > 20 && w < 300)) { toast('Проверь вес'); return; }
+  const ex = S.weights.find(x => x.d === d);
+  if (ex) { ex.w = w; ex.sy = 0; } else { S.weights.push({ d, w, sy: 0 }); S.weights.sort((a, b) => a.d < b.d ? -1 : 1); }
+  qop({ op: 'weight', d, w });
+  toast('Вес записан: ' + fn(w) + ' кг');
+}
+function refreshSession(sid) {
+  const s = S.sessions.find(x => x.sid === sid); if (!s) return;
+  const rows = sessionRows(sid);
+  s.sets = rows.filter(isWork).length; s.prs = rows.filter(r => r.pr).length;
+  qSession(s);
+}
+function logSet() {
+  const A = S.active, it = cur(), id = it.use || it.ex, e = EX(id), d = draft(it);
+  if (e.load !== 'bodyweight' && !(d.w > 0)) { toast('Укажи вес'); return; }
+  if (!(d.r > 0)) { toast(e.metric === 'sec' ? 'Укажи секунды' : 'Укажи повторы'); return; }
+  const rec = makeRec(A, it, d);
+  it.pnote = '';
+  S.log.push(rec); touchLog(); qSet(rec);
+  let plan = it.rest, jump = -1;
+  if (d.ty === 'рест-пауза') plan = 20;
+  if (it.grp && d.ty !== 'дроп') {
+    const mem = A.items.map((x, k) => k).filter(k => A.items[k].grp === it.grp && !A.items[k].skip);
+    const w = itemWork(A, it);
+    const order = mem.slice(mem.indexOf(A.cur) + 1).concat(mem.slice(0, mem.indexOf(A.cur)));
+    // следующий участник связки, который в этом круге ещё не делал подход
+    const pend = order.find(k => itemWork(A, A.items[k]) < Math.min(w, A.items[k].sets));
+    plan = Math.max(...mem.map(k => A.items[k].rest));
+    if (pend != null) { jump = pend; plan = 0; }
+    else {
+      const first = mem.find(k => itemWork(A, A.items[k]) < A.items[k].sets);
+      if (first != null && first !== A.cur) jump = first;
+    }
+  }
+  A.restStart = Date.now(); A.restPlan = plan; A.beeped = false;
+  if (jump >= 0) { A.cur = jump; scrollEx(); }
+  UI.ask = '';
+  save(); render();
+  if (rec.pr) toast('🏆 Новый рекорд!');
+}
+const ACT = {
+  tab: el => { UI.tab = el.dataset.v; window.scrollTo(0, 0); render(); },
+  start: el => { if (S.active) { UI.tab = 'train'; render(); return; } startSession(el.dataset.v); UI.tab = 'train'; UI.sum = null; wake(); window.scrollTo(0, 0); render(); },
+  resume: () => { UI.tab = 'train'; render(); },
+  open: el => { const A = S.active, i = +el.dataset.i; A.cur = i; A.items[i].skip = false; save(); render(); scrollEx(); },
+  warmdone: () => { S.active.warmEnd = nowS(); save(); render(); },
+  wstep: el => { const it = cur(), d = draft(it), st = EX(it.use || it.ex).step || 1; d.w = Math.max(0, r2(d.w + (+el.dataset.v) * st)); save(); render(); },
+  wnum: () => { const it = cur(), d = draft(it); openNum('Вес, кг', d.w ? fn(d.w) : '', v => { d.w = Math.max(0, r2(v)); save(); }); },
+  rstep: el => { const it = cur(), d = draft(it), st = EX(it.use || it.ex).metric === 'sec' ? 5 : 1; d.r = Math.max(0, d.r + (+el.dataset.v) * st); save(); render(); },
+  rnum: () => { const it = cur(), d = draft(it); openNum(EX(it.use || it.ex).metric === 'sec' ? 'Секунды' : 'Повторы', d.r, v => { d.r = Math.max(0, Math.round(v)); save(); }); },
+  qw: el => { draft(cur()).w = +el.dataset.v; save(); render(); },
+  ty: el => { draft(cur()).ty = el.dataset.v; save(); render(); },
+  df: el => { draft(cur()).df = el.dataset.v; save(); render(); },
+  log: () => { unlockAudio(); logSet(); },
+  drop: () => {
+    const it = cur(), id = it.use || it.ex, e = EX(id), done = setsOf(S.active.sid, id), last = done[done.length - 1];
+    const d = draft(it), st = e.step || 1;
+    d.ty = 'дроп'; d.df = 'отказ';
+    if (last) { d.w = Math.max(st, Math.round(last.w * 0.75 / st) * st); d.r = Math.max(5, last.r); }
+    save(); render();
+  },
+  tech: el => { UI.tech[el.dataset.v] = !UI.tech[el.dataset.v]; render(); },
+  variant: el => { const it = cur(); it.use = el.dataset.v; it.d = null; save(); render(); },
+  next: () => { const A = S.active; A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); },
+  skip: () => { const A = S.active; if (UI.ask === 'skip') { cur().skip = true; UI.ask = ''; A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); } else { UI.ask = 'skip'; render(); } },
+  replace: () => openSheet({ kind: 'pick', mode: 'rep' }),
+  addex: () => openSheet({ kind: 'pick', mode: 'add' }),
+  pickex: el => {
+    const A = S.active, id = el.dataset.v;
+    if (UI.sheet.mode === 'add') {
+      const last = (idx()[id] || []);
+      A.items.push({ ex: id, sets: 3, rmin: EX(id).metric === 'sec' ? 30 : 8, rmax: EX(id).metric === 'sec' ? 45 : 12, rest: 90, grp: '', use: id, rep: false, skip: false, note: '', pnote: '', extra: true });
+      A.cur = A.items.length - 1;
+    } else { const it = cur(); it.use = id; it.rep = id !== it.ex; it.d = null; }
+    save(); closeSheet(); render(); scrollEx();
+  },
+  newex: () => { collect(); const back = UI.sheet && UI.sheet.kind === 'pick' ? UI.sheet : null; openSheet({ kind: 'newex', back }); },
+  newexok: () => {
+    const s = UI.sheet, n = (fv('n', '') || '').trim();
+    if (!n) { toast('Нужно название'); return; }
+    const o = { name: n, group: (fv('g', '') || '').trim() || 'Другое', load: fv('l', 'stack'), metric: fv('m', 'reps'), step: parseNum(fv('st', '1')) || 1 };
+    if (s.edit) { Object.assign(s.edit, o); if (fv('t', null) != null) s.edit.tech = fv('t', ''); qop({ op: 'exercise', ex: Object.assign({}, s.edit) }); }
+    else { const e = Object.assign({ id: nextExId(), vg: '', icon: '', tech: '', arch: 0 }, o); S.pool.push(e); qop({ op: 'exercise', ex: Object.assign({}, e) }); }
+    touchPool(); save(); closeSheet(); render(); toast('Упражнение сохранено');
+  },
+  exmenu: el => openSheet({ kind: 'newex', edit: S.pool.find(p => p.id === el.dataset.v) }),
+  exarch: () => { const e = UI.sheet.edit; e.arch = e.arch ? 0 : 1; qop({ op: 'exercise', ex: Object.assign({}, e) }); touchPool(); save(); closeSheet(); render(); },
+  editset: el => { const r = S.log.find(x => x.id === el.dataset.v); if (r) openSheet({ kind: 'edit', e: { id: r.id, ex: r.ex, w: r.w, r: r.r, df: r.df, ty: r.ty, m: r.m } }); },
+  sdf: el => { UI.sheet.f.edf = el.dataset.v; renderSheet(); },
+  sty: el => { UI.sheet.f.ety = el.dataset.v; renderSheet(); },
+  editok: () => {
+    const e = UI.sheet.e, r = S.log.find(x => x.id === e.id); if (!r) return closeSheet();
+    const w = parseNum(fv('ew', e.w)), rr = parseNum(fv('er', e.r));
+    if (w == null || rr == null) { toast('Проверь числа'); return; }
+    r.w = Math.max(0, r2(w)); r.r = Math.max(0, Math.round(rr)); r.df = fv('edf', e.df); r.ty = fv('ety', e.ty);
+    r.we = weff(r.ex, r.w); r.e1 = e1of(r); touchLog(); r.pr = isPR(r) ? 1 : 0;
+    qSet(r); refreshSession(r.sid);
+    const it = S.active && S.active.items.find(i => (i.use || i.ex) === r.ex); if (it) it.d = null;
+    closeSheet(); render();
+  },
+  delset: () => {
+    const e = UI.sheet.e, r = S.log.find(x => x.id === e.id);
+    S.log = S.log.filter(x => x.id !== e.id); touchLog(); qop({ op: 'delset', id: e.id });
+    if (r) refreshSession(r.sid);
+    const it = S.active && S.active.items.find(i => (i.use || i.ex) === e.ex); if (it) it.d = null;
+    closeSheet(); render();
+  },
+  note: () => { const it = cur(); openSheet({ kind: 'note', text: it.note || it.pnote || '' }); },
+  noteok: () => {
+    const it = cur(), t = (fv('nt', '') || '').trim(), id = it.use || it.ex, done = setsOf(S.active.sid, id);
+    it.note = t;
+    if (done.length) { const r = done[done.length - 1]; r.note = t; qSet(r); } else it.pnote = t;
+    save(); closeSheet(); render();
+  },
+  finish: () => {
+    const A = S.active, n = sessionRows(A.sid).length;
+    if (!n) openSheet({ kind: 'confirm', title: 'Подходов нет', text: 'Закрыть тренировку без записи?', yes: 'Закрыть', no: 'Вернуться', cb: () => { S.active = null; unwake(); save(); closeSheet(); render(); } });
+    else openSheet({ kind: 'confirm', title: 'Завершить тренировку?', text: 'Записано подходов: ' + n + '. Время тренировки зафиксируется по последнему подходу.', yes: 'Завершить', no: 'Продолжить', cb: () => {
+      const s = summarize(S.active); S.sessions.push(s); qSession(s); S.active = null; unwake();
+      UI.sum = s.sid; UI.sheet = null; save(); renderSheet(); window.scrollTo(0, 0); render();
+    } });
+  },
+  confirmok: () => { const cb = UI.sheet.cb; if (cb) cb(); },
+  shclose: () => closeSheet(),
+  numok: () => { const v = parseNum(fv('v', '')); if (v == null) { toast('Введи число'); return; } const cb = UI.sheet.cb; closeSheet(); cb(v); render(); },
+  closesum: () => { UI.sum = null; window.scrollTo(0, 0); render(); },
+  opensum: el => { UI.tab = 'train'; UI.sum = el.dataset.v; window.scrollTo(0, 0); render(); },
+  wsave: el => { saveWeight(el.dataset.v, wval()); UI.wDraft = null; render(); },
+  wday: el => { UI.wDraft = r1(wval() + (+el.dataset.v)); render(); },
+  wnumday: el => {
+    const d = el.dataset.v;
+    if (d === dstr()) openNum('Вес, кг', fn(wval()), v => { UI.wDraft = r1(v); });
+    else openNum('Вес за ' + dlabel(d) + ', кг', fn(weightOn(d)), v => saveWeight(d, v));
+  },
+  pdetail: el => openSheet({ kind: 'pd', id: el.dataset.v }),
+  saveconn: () => {
+    const c = UI.conn || {}, url = (c.url != null ? c.url : S.cfg.url).trim(), tk = (c.token != null ? c.token : S.cfg.token).trim();
+    if (url && !/^(https:\/\/script\.google(usercontent)?\.com\/|http:\/\/(localhost|127\.0\.0\.1)[:\/])/.test(url)) { toast('Адрес должен начинаться с https://script.google.com/'); return; }
+    S.cfg.url = url; S.cfg.token = tk; S.sync.err = ''; UI.conn = null; save(); render();
+    if (url && tk) { toast('Сохранено, проверяю связь…'); flush().then(() => pull(true)); } else toast('Сохранено');
+  },
+  pullnow: () => { pull(true); },
+  flushnow: () => { S.sync.err = ''; flush(); },
+  progimport: () => openSheet({ kind: 'prog' }),
+  progcheck: () => { collect(); UI.sheet.pr = parseProgram(fv('ptxt', '')); renderSheet(); },
+  progok: () => { applyProgram(UI.sheet.pr); closeSheet(); save(); render(); toast('Программа загружена'); },
+  sound: () => { S.cfg.sound = !S.cfg.sound; if (S.cfg.sound) { unlockAudio(); beep(); } save(); render(); },
+  backup: () => {
+    const o = { log: S.log, weights: S.weights, sessions: S.sessions, pool: S.pool, complexes: S.complexes, cfg: Object.assign({}, S.cfg, { token: '', url: '' }) };
+    const t = JSON.stringify(o);
+    const done = () => toast('Копия скопирована в буфер обмена');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, () => toast('Не удалось скопировать'));
+    else toast('Не удалось скопировать');
+  }
+};
+
+document.addEventListener('click', e => {
+  const sh = $('#sheet');
+  if (e.target === sh) { closeSheet(); return; }
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  collect(); unlockAudio();
+  const a = el.dataset.a;
+  if (a !== 'skip' && UI.ask) UI.ask = '';
+  const f = ACT[a]; if (f) f(el);
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.f === 'q' && UI.sheet && UI.sheet.kind === 'pick') {
+    UI.sheet.f.q = t.value; const l = $('#plist'); if (l) l.innerHTML = pickList();
+  }
+  if (t.dataset && (t.dataset.f === 'url' || t.dataset.f === 'token') && !UI.sheet) { UI.conn = UI.conn || {}; UI.conn[t.dataset.f] = t.value; }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset && t.dataset.f === 'snote') {
+    const s = S.sessions.find(x => x.sid === t.dataset.sid); if (s) { s.note = t.value; qSession(s); }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && UI.sheet && UI.sheet.kind === 'num' && e.target.tagName === 'INPUT') { e.preventDefault(); collect(); ACT.numok(); }
+});
+
+/* ---------- запуск ---------- */
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    wake(); tick(); flush();
+    if (S.cfg.url && Date.now() - (S.sync.last || 0) > 5 * 60000 && !S.active) pull(false);
+  }
+});
+window.addEventListener('online', () => { flush(); });
+window.addEventListener('pagehide', save);
+render();
+setInterval(tick, 1000);
+setInterval(() => { if (S.outbox.length) flush(); }, 30000);
+if (S.active) wake();
+if (S.cfg.url && S.cfg.token) { flush().then(() => { if (!S.active) pull(false); }); }
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { });
+
+
+</script>
+</body>
+</html>
