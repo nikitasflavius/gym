@@ -610,7 +610,9 @@ function mergePull(j) {
   }
   if (j.sessions) {
     const loc = new Map(S.sessions.map(s => [s.sid, s]));
-    for (const s of j.sessions) { if (pendS.has(s.sid)) continue; loc.set(s.sid, Object.assign({}, loc.get(s.sid) || {}, s, { fin: 1 })); }
+    const seenS = new Set();
+    for (const s of j.sessions) { seenS.add(s.sid); if (pendS.has(s.sid)) continue; loc.set(s.sid, Object.assign({}, loc.get(s.sid) || {}, s, { fin: 1 })); }
+    for (const k of [...loc.keys()]) if (!seenS.has(k) && !pendS.has(k) && k !== activeSid) loc.delete(k); // строку удалили в таблице
     S.sessions = [...loc.values()].sort((a, b) => a.start - b.start);
   }
 }
