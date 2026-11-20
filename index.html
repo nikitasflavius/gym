@@ -262,7 +262,7 @@ function defState() {
     v: 1,
     cfg: { url: '', token: '', cycle: SEED.cycle, wStartDate: SEED.cfg.wStartDate, wStart: SEED.cfg.wStart, paceMin: SEED.cfg.paceMin, paceMax: SEED.cfg.paceMax, sound: true },
     pool: clone(SEED.pool), complexes: clone(SEED.complexes),
-    log: [], weights: [], sessions: [], outbox: [], active: null, sync: { last: 0, err: '' }
+    log: [], weights: [], sessions: [], outbox: [], active: null, features: {}, programArchives: [], sync: { last: 0, err: '' }
   };
 }
 function loadState() {
@@ -520,14 +520,16 @@ function exTimes(sid, boundary) {
 function summarize(A) {
   const rows = sessionRows(A.sid);
   const end = nowS();
-  const restSec = Math.round(((A.restEvents || []).reduce((n, v) => n + Math.max(0, v.end - v.start), 0) + (phaseOf(A) === 'rest' && A.restStart ? Math.max(0, end - A.restStart) : 0)) / 1000);
+  const restEvents = (A.restEvents || []).slice();
+  if (phaseOf(A) === 'rest' && A.restStart) restEvents.push({ start: A.restStart, end: end, ex: A.pending ? A.pending.ex : '', recId: A.pending && A.pending.recId || '' });
+  const restSec = Math.round(restEvents.reduce((n, v) => n + Math.max(0, v.end - v.start), 0) / 1000);
   return {
     sid: A.sid, d: A.d, cx: A.cx, cyc: A.cyc, start: A.start, end, warmEnd: A.warmEnd || 0,
     min: Math.max(1, Math.round((end - A.start) / 60000)),
     wmin: Math.max(1, Math.round((end - (A.warmEnd || A.start)) / 60000)),
     sets: rows.filter(isWork).length, prs: rows.filter(r => r.pr).length,
     subs: A.items.filter(i => i.rep).length, skips: A.items.filter(i => i.skip).length,
-    note: A.snote || '', fin: 1, restSec
+    note: A.snote || '', fin: 1, restSec, restEvents
   };
 }
 
@@ -635,6 +637,8 @@ async function pull(manual) {
 }
 
 function mergePull(j) {
+  S.features = j.features || {};
+  if (Array.isArray(j.programArchives)) S.programArchives = j.programArchives;
   const ob = S.outbox;
   const pendSet = new Set(ob.filter(o => o.op === 'set' || o.op === 'delset').map(o => o.id));
   const pendW = new Set(ob.filter(o => o.op === 'weight').map(o => o.d));
@@ -1035,6 +1039,10 @@ function viewMore() {
     '<div class="syncline ' + syncState() + '" id="syncline">' + esc(syncText()) + '</div>' +
     (S.outbox.length ? '<button class="btn sm" style="margin-top:8px" data-a="flushnow">Отправить очередь сейчас</button>' : '') + '</div>';
   h += '<h2>Программа</h2><div class="card"><b style="color:var(--navy)">Цикл ' + S.cfg.cycle + '</b><div class="hint" style="margin:2px 0 10px">' + S.complexes.map(c => c.key + ': ' + c.items.length + ' упр.').join(' · ') + '</div><button class="btn sm" data-a="progimport">Загрузить новую программу</button></div>';
+  const archives = S.programArchives || [];
+  if (archives.length) h += '<h2>Архив программ</h2><div class="card">' +
+    archives.slice().sort((a,b) => b.created - a.created).map(a => '<div class="exl"><span><b>Цикл ' + esc(a.cycle) + '</b><br><small>' +
+    (a.complexes || []).map(c => esc(c.key) + ': ' + c.items.length + ' упр.').join(' · ') + '</small></span></div>').join('') + '</div>';
   h += '<h2>Упражнения</h2><div class="card">' + S.pool.slice().sort((a, b) => a.arch - b.arch || a.group.localeCompare(b.group, 'ru')).map(p => '<button class="exl ' + (p.arch ? 'arch' : '') + '" data-a="exmenu" data-v="' + p.id + '"><span>' + esc(p.name) + '<br><small>' + esc(p.group) + ' · ' + LOADS[p.load] + (p.arch ? ' · в архиве' : '') + '</small></span><span style="color:var(--muted)">›</span></button>').join('') + '<button class="btn sm" style="margin-top:10px" data-a="newex">+ Своё упражнение</button></div>';
   h += '<h2>Прочее</h2><div class="card"><div class="sw"><span>Звук по окончании отдыха</span><button class="' + (S.cfg.sound ? 'on' : '') + '" data-a="sound" aria-label="звук"></button></div>' +
     '<button class="btn sm" style="margin-top:8px" data-a="backup">Скопировать резервную копию данных</button>' +
@@ -1357,7 +1365,20 @@ const ACT = {
   flushnow: () => { S.sync.err = ''; flush(); },
   progimport: () => openSheet({ kind: 'prog' }),
   progcheck: () => { collect(); UI.sheet.pr = parseProgram(fv('ptxt', '')); renderSheet(); },
-  progok: () => { applyProgram(UI.sheet.pr); closeSheet(); save(); render(); toast('Программа загружена'); },
+  progok: async () => {
+    const pr = UI.sheet && UI.sheet.pr;
+    if (!pr || pr.errors.length) return;
+    if (!S.cfg.url || !S.cfg.token || !navigator.onLine) {
+      toast('Смена программы требует подключения к таблице'); return;
+    }
+    await flush();
+    if (S.outbox.length) { toast('Сначала дождись отправки очереди'); return; }
+    if (!await pull(false) || !S.features.programArchive) {
+      toast('Архив программ не поддерживается сервером'); return;
+    }
+    applyProgram(pr); closeSheet(); save(); render();
+    toast('Новая программа поставлена в очередь синхронизации');
+  },
   sound: () => { S.cfg.sound = !S.cfg.sound; if (S.cfg.sound) { unlockAudio(); beep(); } save(); render(); },
   backup: () => {
     const o = { log: S.log, weights: S.weights, sessions: S.sessions, pool: S.pool, complexes: S.complexes, cfg: Object.assign({}, S.cfg, { token: '', url: '' }) };
