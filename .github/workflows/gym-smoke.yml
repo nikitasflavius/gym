@@ -14,4 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check JavaScript and offline flows
-        run: node tests/smoke.cjs
+        run: |
+          node tests/smoke.cjs
+          node tests/server-smoke.cjs
