@@ -1,0 +1,334 @@
+/**
+ * Тренировочный блокнот — приёмник данных для Google Таблицы.
+ * Вставь этот код в Расширения → Apps Script, поменяй TOKEN и задеплой как веб-приложение.
+ * Приложение шлёт сюда подходы, вес и тренировки; таблица сама считает отчёты.
+ */
+const TOKEN = '___';   // придумай длинный пароль; тот же вводится в приложении
+const PULL_MAX_LOG = 4000;                // сколько последних подходов отдавать приложению
+
+const SH = { log: 'Лог', sess: 'Тренировки', w: 'Вес', pool: 'Упражнения', prog: 'Программа', cx: 'Комплексы', cfg: 'Настройки' };
+const LOAD_RU = { barbell: 'Штанга', dumbbell: 'Гантели', smith: 'Смит', stack: 'Тренажёр / блок', bodyweight: 'Свой вес' };
+const DOW = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const LOG_COLS = 21;
+
+function out_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  try {
+    const p = (e && e.parameter) || {};
+    if (p.token !== TOKEN) return out_({ ok: false, error: 'неверный пароль' });
+    if (p.action === 'pull') return out_(pull_());
+    return out_({ ok: true, pong: true });
+  } catch (err) { return out_({ ok: false, error: String(err && err.message || err) }); }
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  try {
+    const body = JSON.parse(e.postData.contents);
+    if (body.token !== TOKEN) return out_({ ok: false, error: 'неверный пароль' });
+    lock.waitLock(25000);
+    const ctx = { ss: SpreadsheetApp.getActive(), logMap: null };
+    ctx.tz = ctx.ss.getSpreadsheetTimeZone();
+    const ops = body.ops || [];
+    for (const op of ops) apply_(ctx, op);
+    SpreadsheetApp.flush();
+    return out_({ ok: true, applied: ops.length });
+  } catch (err) {
+    return out_({ ok: false, error: String(err && err.message || err) });
+  } finally { try { lock.releaseLock(); } catch (_) { } }
+}
+
+/* ---------- вспомогательное ---------- */
+function sheet_(ctx, name) {
+  const s = ctx.ss.getSheetByName(name);
+  if (!s) throw new Error('нет листа «' + name + '»');
+  return s;
+}
+function ensureRows_(sh, n) {
+  const have = sh.getMaxRows();
+  if (n > have) sh.insertRowsAfter(have, n - have + 200);
+}
+function firstBlankRow_(sh, col) {
+  const last = sh.getLastRow();
+  if (last < 2) return 2;
+  const v = sh.getRange(2, col, last - 1, 1).getValues();
+  for (let i = 0; i < v.length; i++) if (v[i][0] === '' || v[i][0] === null) return i + 2;
+  return last + 1;
+}
+function findRow_(sh, col, key) {
+  const last = sh.getLastRow();
+  if (last < 2) return 0;
+  const v = sh.getRange(2, col, last - 1, 1).getValues();
+  for (let i = 0; i < v.length; i++) if (String(v[i][0]) === String(key)) return i + 2;
+  return 0;
+}
+function dateCell_(ctx, s) { return Utilities.parseDate(s, ctx.tz, 'yyyy-MM-dd'); }
+function isDate_(v) { return Object.prototype.toString.call(v) === '[object Date]'; }
+function dstr_(ctx, v) {
+  if (isDate_(v)) return Utilities.formatDate(v, ctx.tz, 'yyyy-MM-dd');
+  return String(v || '').slice(0, 10);
+}
+function tsOf_(v) {
+  if (isDate_(v)) return v.getTime();
+  const t = new Date(v).getTime();
+  return isNaN(t) ? 0 : t;
+}
+function num_(v) { const n = Number(v); return isNaN(n) ? 0 : n; }
+
+/* ---------- запись ---------- */
+function apply_(ctx, op) {
+  switch (op.op) {
+    case 'set': return opSet_(ctx, op.rec);
+    case 'delset': return opDel_(ctx, op.id);
+    case 'weight': return opWeight_(ctx, op);
+    case 'session': return opSession_(ctx, op.s);
+    case 'exercise': return opExercise_(ctx, op.ex);
+    case 'program': return opProgram_(ctx, op);
+    default: throw new Error('неизвестная операция ' + op.op);
+  }
+}
+
+function logMap_(ctx) {
+  if (ctx.logMap) return ctx.logMap;
+  const sh = sheet_(ctx, SH.log), m = {};
+  const last = sh.getLastRow();
+  if (last >= 2) { const v = sh.getRange(2, 1, last - 1, 1).getValues(); for (let i = 0; i < v.length; i++) if (v[i][0] !== '') m[String(v[i][0])] = i + 2; }
+  return (ctx.logMap = m);
+}
+function opSet_(ctx, r) {
+  const sh = sheet_(ctx, SH.log), map = logMap_(ctx);
+  const row = map[r.id] || firstBlankRow_(sh, 1);
+  ensureRows_(sh, row);
+  const d = dateCell_(ctx, r.d);
+  const vals = [r.id, new Date(r.ts), d, r.cyc, r.cxn || r.cx, DOW[d.getDay()], r.exn || r.ex, r.ex, r.n, r.ty, r.w, r.we, r.r,
+    r.m === 'sec' ? 'сек' : 'повт', r.df, r.e1 || '', r.pr ? '🏆' : '', r.subn || '', r.grp || '', r.note || '', r.sid];
+  sh.getRange(row, 1, 1, LOG_COLS).setValues([vals]);
+  map[r.id] = row;
+}
+function opDel_(ctx, id) {
+  const sh = sheet_(ctx, SH.log), map = logMap_(ctx), row = map[id];
+  if (!row) return;
+  sh.deleteRow(row);
+  ctx.logMap = null;
+}
+function opWeight_(ctx, op) {
+  const sh = sheet_(ctx, SH.w);
+  const d = dateCell_(ctx, op.d);
+  const last = sh.getLastRow();
+  let row = 0;
+  if (last >= 2) {
+    const v = sh.getRange(2, 1, last - 1, 1).getValues();
+    for (let i = 0; i < v.length; i++) if (v[i][0] !== '' && dstr_(ctx, v[i][0]) === op.d) { row = i + 2; break; }
+  }
+  if (!row) row = firstBlankRow_(sh, 1);
+  ensureRows_(sh, row);
+  sh.getRange(row, 1, 1, 2).setValues([[d, op.w]]);
+  // держим даты по порядку (формулы в C:E привязаны к своей строке и от порядка не зависят)
+  const n = firstBlankRow_(sh, 1) - 2;
+  if (n > 1) {
+    const dv = sh.getRange(2, 1, n, 1).getValues();
+    let sorted = true;
+    for (let i = 1; i < dv.length; i++) if (tsOf_(dv[i][0]) < tsOf_(dv[i - 1][0])) { sorted = false; break; }
+    if (!sorted) sh.getRange(2, 1, n, 2).sort({ column: 1, ascending: true });
+  }
+}
+function opSession_(ctx, s) {
+  const sh = sheet_(ctx, SH.sess);
+  let row = findRow_(sh, 1, s.sid);
+  if (!row) row = firstBlankRow_(sh, 1);
+  ensureRows_(sh, row);
+  const cols = sh.getRange(1, 15, 1, 2).getValues()[0];
+  if (cols[0] && cols[0] !== 'Отдых, сек') throw new Error('Столбец O уже используется: ' + cols[0]);
+  if (cols[1] && cols[1] !== 'События времени, JSON') throw new Error('Столбец P уже используется: ' + cols[1]);
+  sh.getRange(1, 15, 1, 2).setValues([['Отдых, сек', 'События времени, JSON']]);
+  sh.getRange(row, 1, 1, 16).setValues([[s.sid, dateCell_(ctx, s.d), s.cx, s.cyc, new Date(s.start), new Date(s.end), s.min, s.wmin, s.sets, s.prs, s.subs, s.skips, s.note || '', s.warmEnd ? new Date(s.warmEnd) : '', s.restSec == null ? '' : s.restSec, JSON.stringify(s.restEvents || [])]]);
+}
+function opExercise_(ctx, e) {
+  const sh = sheet_(ctx, SH.pool);
+  let row = findRow_(sh, 1, e.id);
+  if (!row) row = firstBlankRow_(sh, 1);
+  ensureRows_(sh, row);
+  sh.getRange(row, 1, 1, 10).setValues([[e.id, e.name, e.group, LOAD_RU[e.load] || e.load, e.metric === 'sec' ? 'Секунды' : 'Повторы', e.step, e.vg || '', e.icon || '', e.arch ? 'да' : '', e.tech || '']]);
+}
+/* Архив программы: отдельный неизменяемый снимок перед каждым изменением. */
+function archiveSheet_(ctx) {
+  let sh = ctx.ss.getSheetByName('Архив программ');
+  if (!sh) {
+    sh = ctx.ss.insertSheet('Архив программ');
+    sh.getRange(1, 1, 1, 5).setValues([['ID операции', 'Предыдущий цикл', 'Снимок создан', 'JSON программы', 'Статус']]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function readProgramSnapshot_(ctx) {
+  const complexes = [];
+  const cx = sheet_(ctx, SH.cx), cr = cx.getLastRow();
+  if (cr >= 2) cx.getRange(2, 1, cr - 1, 4).getValues().forEach(r => {
+    if (r[0] !== '') complexes.push({ key: String(r[0]), name: String(r[1]), sub: String(r[2] || ''), warm: String(r[3] || ''), items: [] });
+  });
+  const pr = sheet_(ctx, SH.prog), pn = pr.getLastRow();
+  if (pn >= 2) pr.getRange(2, 1, pn - 1, 9).getValues().forEach(r => {
+    const cx = complexes.find(x => x.key === String(r[0]));
+    if (cx && r[2] !== '') cx.items.push({
+      ex: String(r[2]), sets: num_(r[4]), rmin: num_(r[5]),
+      rmax: num_(r[6]), rest: num_(r[7]), grp: String(r[8] || ''), _n: num_(r[1])
+    });
+  });
+  complexes.forEach(cx => { cx.items.sort((a, b) => a._n - b._n); cx.items.forEach(x => delete x._n); });
+  let cycle = 0;
+  const cf = sheet_(ctx, SH.cfg), n = cf.getLastRow();
+  if (n >= 1) cf.getRange(1, 1, n, 2).getValues().forEach(r => { if (String(r[0]).trim() === 'Цикл') cycle = num_(r[1]); });
+  return { cycle: cycle, complexes: complexes };
+}
+function writeProgramRows_(ctx, data) {
+  const cx = sheet_(ctx, SH.cx), pr = sheet_(ctx, SH.prog);
+  const cr = data.complexes.map(c => [c.key, c.name, c.sub || '', c.warm || '']);
+  const pool = {};
+  const ps = sheet_(ctx, SH.pool), pl = ps.getLastRow();
+  if (pl >= 2) ps.getRange(2, 1, pl - 1, 2).getValues().forEach(r => { pool[r[0]] = r[1]; });
+  const rows = [];
+  data.complexes.forEach(c => c.items.forEach((it, i) => rows.push([
+    c.key, i + 1, it.ex, pool[it.ex] || it.ex, it.sets, it.rmin, it.rmax, it.rest, it.grp || ''
+  ])));
+  ensureRows_(cx, cr.length + 1);
+  ensureRows_(pr, rows.length + 1);
+  // Очищаем только рабочие столбцы, не все 26 столбцов листов.
+  if (cx.getMaxRows() > 1) cx.getRange(2, 1, cx.getMaxRows() - 1, 4).clearContent();
+  if (pr.getMaxRows() > 1) pr.getRange(2, 1, pr.getMaxRows() - 1, 9).clearContent();
+  if (cr.length) cx.getRange(2, 1, cr.length, 4).setValues(cr);
+  if (rows.length) pr.getRange(2, 1, rows.length, 9).setValues(rows);
+  const cf = sheet_(ctx, SH.cfg), last = cf.getLastRow();
+  if (last >= 1) {
+    const values = cf.getRange(1, 1, last, 2).getValues();
+    for (let i = 0; i < values.length; i++) if (String(values[i][0]).trim() === 'Цикл') {
+      cf.getRange(i + 1, 2).setValue(data.cycle); break;
+    }
+  }
+  SpreadsheetApp.flush();
+}
+function opProgram_(ctx, op) {
+  if (!op.oid) throw new Error('Нет ID операции архивирования программы');
+  if (!Array.isArray(op.complexes) || !op.complexes.length || !isFinite(+op.cycle)) {
+    throw new Error('Некорректная программа');
+  }
+  const ar = archiveSheet_(ctx), key = String(op.oid);
+  let row = findRow_(ar, 1, key), before;
+  if (row) {
+    const status = String(ar.getRange(row, 5).getValue());
+    if (status === 'done') return; // Повтор отправки уже применённой операции.
+    before = JSON.parse(String(ar.getRange(row, 4).getValue()));
+    // После прерывания предыдущего запроса восстанавливаем исходный снимок.
+    writeProgramRows_(ctx, before);
+  } else {
+    before = readProgramSnapshot_(ctx);
+    row = firstBlankRow_(ar, 1);
+    ensureRows_(ar, row);
+    ar.getRange(row, 1, 1, 5).setValues([[key, before.cycle, new Date(), JSON.stringify(before), 'prepared']]);
+    SpreadsheetApp.flush(); // Снимок обязательно сохранён до очистки программы.
+  }
+  try {
+    writeProgramRows_(ctx, { cycle: +op.cycle, complexes: op.complexes });
+    const actual = readProgramSnapshot_(ctx);
+    const n = arr => arr.reduce((total, cx) => total + cx.items.length, 0);
+    if (actual.cycle !== +op.cycle || actual.complexes.length !== op.complexes.length ||
+        n(actual.complexes) !== n(op.complexes)) throw new Error('Проверка записи программы не пройдена');
+    ar.getRange(row, 5).setValue('done');
+    SpreadsheetApp.flush();
+  } catch (err) {
+    try { writeProgramRows_(ctx, before); }
+    catch (restoreErr) { throw new Error('НЕ УДАЛОСЬ восстановить программу из архива: ' + restoreErr.message); }
+    throw err;
+  }
+}
+
+function safeEvents_(s) {
+  try { const events = JSON.parse(String(s)); return Array.isArray(events) ? events : []; }
+  catch (_) { return []; }
+}
+/* ---------- выдача ---------- */
+function pull_() {
+  const ctx = { ss: SpreadsheetApp.getActive() };
+  ctx.tz = ctx.ss.getSpreadsheetTimeZone();
+  const res = { ok: true, features: { programArchive: true, restStats: true } };
+
+  // настройки
+  const cf = sheet_(ctx, SH.cfg), cl = cf.getLastRow(), cfg = {};
+  if (cl >= 1) cf.getRange(1, 1, cl, 2).getValues().forEach(r => {
+    const k = String(r[0]).trim();
+    if (k === 'Цикл') cfg.cycle = num_(r[1]);
+    else if (k.indexOf('Старт') === 0) cfg.wStartDate = dstr_(ctx, r[1]);
+    else if (k.indexOf('Вес на старте') === 0) cfg.wStart = num_(r[1]);
+    else if (k.indexOf('Темп мин') === 0) cfg.paceMin = num_(r[1]);
+    else if (k.indexOf('Темп макс') === 0) cfg.paceMax = num_(r[1]);
+  });
+  res.cfg = cfg;
+
+  // пул
+  const ps = sheet_(ctx, SH.pool), pl = ps.getLastRow(), pool = [], byName = {};
+  const loadBack = {}; Object.keys(LOAD_RU).forEach(k => { loadBack[LOAD_RU[k].toLowerCase()] = k; loadBack[k] = k; });
+  if (pl >= 2) ps.getRange(2, 1, pl - 1, 10).getValues().forEach(r => {
+    if (!r[0] || !r[1]) return;
+    const e = { id: String(r[0]), name: String(r[1]), group: String(r[2]), load: loadBack[String(r[3]).toLowerCase()] || 'stack', metric: /сек/i.test(String(r[4])) ? 'sec' : 'reps', step: num_(r[5]) || 1, vg: String(r[6] || ''), icon: String(r[7] || ''), tech: String(r[9] || ''), arch: String(r[8]).trim() ? 1 : 0 };
+    pool.push(e); byName[e.name] = e.id;
+  });
+  res.pool = pool;
+
+  // программа
+  const cs = sheet_(ctx, SH.cx), cn = cs.getLastRow(), cxs = [];
+  if (cn >= 2) cs.getRange(2, 1, cn - 1, 4).getValues().forEach(r => { if (r[0] !== '') cxs.push({ key: String(r[0]), name: String(r[1]), sub: String(r[2]), warm: String(r[3]), items: [] }); });
+  const pr = sheet_(ctx, SH.prog), pn = pr.getLastRow();
+  if (pn >= 2) pr.getRange(2, 1, pn - 1, 9).getValues().forEach(r => {
+    const c = cxs.find(x => x.key === String(r[0]));
+    if (c && r[2] !== '') c.items.push({ ex: String(r[2]), sets: num_(r[4]), rmin: num_(r[5]), rmax: num_(r[6]), rest: num_(r[7]), grp: String(r[8] || ''), _n: num_(r[1]) });
+  });
+  cxs.forEach(c => { c.items.sort((a, b) => a._n - b._n); c.items.forEach(i => delete i._n); });
+  res.complexes = cxs;
+
+  // журнал
+  const ls = sheet_(ctx, SH.log), ln = ls.getLastRow(), log = [];
+  if (ln >= 2) {
+    const from = Math.max(2, ln - PULL_MAX_LOG + 1);
+    ls.getRange(from, 1, ln - from + 1, LOG_COLS).getValues().forEach(r => {
+      if (r[0] === '') return;
+      const cxs0 = String(r[4]);
+      log.push({
+        id: String(r[0]), ts: tsOf_(r[1]), d: dstr_(ctx, r[2]), cyc: num_(r[3]), cx: cxs0.indexOf('Свободн') === 0 ? 'F' : cxs0.split(' ·')[0].trim(),
+        ex: String(r[7]), n: num_(r[8]), ty: String(r[9]), w: num_(r[10]), we: num_(r[11]), r: num_(r[12]), m: String(r[13]) === 'сек' ? 'sec' : 'reps',
+        df: String(r[14]), e1: num_(r[15]), pr: r[16] ? 1 : 0, sub: byName[String(r[17])] || '', grp: String(r[18] || ''), note: String(r[19] || ''), sid: String(r[20])
+      });
+    });
+  }
+  res.log = log;
+
+  // вес
+  const ws = sheet_(ctx, SH.w), wn = ws.getLastRow(), weights = [];
+  if (wn >= 2) ws.getRange(2, 1, wn - 1, 2).getValues().forEach(r => { if (r[0] !== '' && r[1] !== '' && !isNaN(Number(r[1]))) weights.push({ d: dstr_(ctx, r[0]), w: Number(r[1]) }); });
+  res.weights = weights;
+
+  // тренировки
+  const ss = sheet_(ctx, SH.sess), sn = ss.getLastRow(), sessions = [];
+  if (sn >= 2) ss.getRange(2, 1, sn - 1, 16).getValues().forEach(r => {
+    if (r[0] === '') return;
+    sessions.push({ sid: String(r[0]), d: dstr_(ctx, r[1]), cx: String(r[2]), cyc: num_(r[3]), start: tsOf_(r[4]), end: tsOf_(r[5]), min: num_(r[6]), wmin: num_(r[7]), sets: num_(r[8]), prs: num_(r[9]), subs: num_(r[10]), skips: num_(r[11]), note: String(r[12] || ''), warmEnd: r[13] ? tsOf_(r[13]) : 0,
+      restSec: r[14] === '' ? null : num_(r[14]), restEvents: r[15] ? safeEvents_(r[15]) : [] });
+  });
+  res.sessions = sessions;
+  const archive = ctx.ss.getSheetByName('Архив программ');
+  const programArchives = [];
+  if (archive && archive.getLastRow() >= 2) {
+    archive.getRange(2, 1, archive.getLastRow() - 1, 5).getValues().forEach(r => {
+      if (String(r[4]) !== 'done') return;
+      try {
+        const snap = JSON.parse(String(r[3]));
+        programArchives.push({ id: String(r[0]), cycle: num_(r[1]), created: tsOf_(r[2]), complexes: snap.complexes || [] });
+      } catch (_) {}
+    });
+  }
+  res.programArchives = programArchives;
+  return res;
+}
+
+
