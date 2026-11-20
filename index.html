@@ -994,11 +994,36 @@ function viewSummary(sid) {
   return h;
 }
 
+function viewCycleComparison() {
+  const cycs = [...new Set(S.log.filter(r => isWork(r) && r.ty === 'норм' && r.cyc > 0).map(r => +r.cyc))].sort((a,b) => a-b);
+  if (cycs.length < 2) return '';
+  const old = cycs[cycs.length-2], fresh = cycs[cycs.length-1];
+  const rows = cyc => S.log.filter(r => +r.cyc === cyc && isWork(r) && r.ty === 'норм');
+  const a = rows(old), b = rows(fresh);
+  const best = list => {
+    const m = new Map();
+    list.forEach(r => {
+      const v = scoreOf(r);
+      if (v != null && v > (m.get(r.ex) || -Infinity)) m.set(r.ex,v);
+    });
+    return m;
+  };
+  const aa = best(a), bb = best(b);
+  const common = [...aa.keys()].filter(id => bb.has(id));
+  const improved = common.filter(id => bb.get(id) > aa.get(id) * 1.005).length;
+  const hardShare = list => list.length ? Math.round(list.filter(r => r.df === 'тяжело' || r.df === 'отказ').length / list.length * 100) : 0;
+  return '<h2>Сравнение циклов</h2><div class="card"><div class="hint" style="margin-top:0">Цикл ' + old + ' → цикл ' + fresh + '</div>' +
+    '<div class="kp" style="margin:8px 0"><div><b>' + a.length + ' → ' + b.length + '</b><small>рабочих подходов</small></div>' +
+    '<div><b>' + common.length + '</b><small>общих упражнений</small></div><div><b>' + improved + '</b><small>лучший показатель вырос</small></div></div>' +
+    '<div class="hint">Доля подходов «тяжело / отказ»: ' + hardShare(a) + '% → ' + hardShare(b) + '%.</div>' +
+    '<div class="hint">Промежуточные результаты: циклы могут различаться продолжительностью. Рост считается по лучшему оценочному результату одного и того же упражнения.</div></div>';
+}
+
 /* ---------- прогресс ---------- */
 function exSeries(id) { return exSessions(id).map(s => ({ d: s.d, v: Math.max(0, ...s.sets.map(r => isWork(r) ? valOf(r) : 0)), sets: s.sets })); }
 function viewProgress() {
   const ids = S.pool.filter(p => !p.arch || (idx()[p.id] || []).length).map(p => p.id).filter(id => (idx()[id] || []).length);
-  let h = '<h1>Прогресс</h1>';
+  let h = '<h1>Прогресс</h1>' + viewCycleComparison();
   const since = addDays(dstr(), -14);
   const prs = S.log.filter(r => r.pr && r.d >= since).sort((a, b) => b.ts - a.ts).slice(0, 6);
   if (prs.length) h += '<h2>Рекорды за 2 недели</h2><div class="bars prs">' + prs.map(r => '🏆 ' + dlabel(r.d) + ' · <b>' + esc(EX(r.ex).name) + '</b> — ' + fn(r.w) + '×' + r.r + (r.m === 'sec' ? 'с' : '')).join('<br>') + '</div>';
@@ -1046,8 +1071,8 @@ function viewMore() {
   h += '<h2>Программа</h2><div class="card"><b style="color:var(--navy)">Цикл ' + S.cfg.cycle + '</b><div class="hint" style="margin:2px 0 10px">' + S.complexes.map(c => c.key + ': ' + c.items.length + ' упр.').join(' · ') + '</div><button class="btn sm" data-a="progimport">Загрузить новую программу</button></div>';
   const archives = S.programArchives || [];
   if (archives.length) h += '<h2>Архив программ</h2><div class="card">' +
-    archives.slice().sort((a,b) => b.created - a.created).map(a => '<div class="exl"><span><b>Цикл ' + esc(a.cycle) + '</b><br><small>' +
-    (a.complexes || []).map(c => esc(c.key) + ': ' + c.items.length + ' упр.').join(' · ') + '</small></span></div>').join('') + '</div>';
+    archives.slice().sort((a,b) => b.created - a.created).map(a => '<button class="exl" data-a="archdetail" data-v="' + esc(a.id) + '"><span><b>Цикл ' + esc(a.cycle) + '</b><br><small>' +
+    (a.complexes || []).map(c => esc(c.key) + ': ' + c.items.length + ' упр.').join(' · ') + '</small></span></button>').join('') + '</div>';
   h += '<h2>Упражнения</h2><div class="card">' + S.pool.slice().sort((a, b) => a.arch - b.arch || a.group.localeCompare(b.group, 'ru')).map(p => '<button class="exl ' + (p.arch ? 'arch' : '') + '" data-a="exmenu" data-v="' + p.id + '"><span>' + esc(p.name) + '<br><small>' + esc(p.group) + ' · ' + LOADS[p.load] + (p.arch ? ' · в архиве' : '') + '</small></span><span style="color:var(--muted)">›</span></button>').join('') + '<button class="btn sm" style="margin-top:10px" data-a="newex">+ Своё упражнение</button></div>';
   h += '<h2>Прочее</h2><div class="card"><div class="sw"><span>Звук по окончании отдыха</span><button class="' + (S.cfg.sound ? 'on' : '') + '" data-a="sound" aria-label="звук"></button></div>' +
     '<button class="btn sm" style="margin-top:8px" data-a="backup">Скопировать резервную копию данных</button>' +
@@ -1156,6 +1181,7 @@ const SHEETS = {
   },
   note: s => '<h3>Заметка</h3><textarea data-f="nt" data-focus placeholder="Что важно запомнить про это упражнение сегодня">' + esc(fv('nt', s.text || '')) + '</textarea><div class="row2"><button class="btn" data-a="shclose">Отмена</button><button class="btn or" data-a="noteok">Сохранить</button></div>',
   pd: s => { const e = EX(s.id), ser = exSeries(s.id); return '<h3>' + esc(e.name) + '</h3>' + lineChart([{ pts: ser.map((x, i) => [i, x.v]), color: 'var(--blue)', dots: true, r: 3, width: 2 }], null, 340, 150, ser.length > 1 ? [dlabel(ser[0].d), dlabel(ser[ser.length - 1].d)] : null) + '<div class="hint" style="margin:0 0 6px">' + (e.metric === 'sec' ? 'лучшее время в сессии' : 'лучший расчётный 1ПМ в сессии, кг') + '</div><div class="recent">' + pdText(s.id) + '</div><button class="btn sm" style="margin-top:10px" data-a="shclose">Закрыть</button>'; },
+  archive: s => { const a = (S.programArchives || []).find(x => x.id === s.id); return a ? '<h3>Архив · цикл ' + esc(a.cycle) + '</h3><div class="pre">' + esc((a.complexes || []).map(cx => cx.key + ' · ' + cx.name + '\n' + cx.items.map(it => '  ' + EX(it.ex).name + ' · ' + it.sets + '×' + it.rmin + '–' + it.rmax + ', отдых ' + mmss(it.rest)).join('\n')).join('\n\n')) + '</div><button class="btn sm" data-a="shclose">Закрыть</button>' : '<h3>Архив не найден</h3>'; },
   prog: s => '<h3>Новая программа</h3><div class="hint" style="margin:0 0 6px">Вставь текст программы, который я подготовил. Проверка ничего не меняет, пока не нажмёшь «Применить».</div><textarea data-f="ptxt" data-focus placeholder="ЦИКЛ 4&#10;# A · Жим · грудь · плечи&#10;Разминка: …&#10;Жим штанги лёжа классический; 4; 6-8; 2:30" style="min-height:150px">' + esc(fv('ptxt', '')) + '</textarea>' +
     (s.pr ? '<div class="pre">' + progPreview(s.pr) + '</div>' : '') +
     '<div class="row2"><button class="btn" data-a="shclose">Закрыть</button>' + (s.pr && !s.pr.errors.length ? '<button class="btn or" data-a="progok">Применить</button>' : '<button class="btn or" data-a="progcheck">Проверить</button>') + '</div>'
@@ -1369,6 +1395,7 @@ const ACT = {
   },
   pullnow: () => { pull(true); },
   flushnow: () => { S.sync.err = ''; flush(); },
+  archdetail: el => openSheet({ kind: 'archive', id: el.dataset.v }),
   progimport: () => openSheet({ kind: 'prog' }),
   progcheck: () => { collect(); UI.sheet.pr = parseProgram(fv('ptxt', '')); renderSheet(); },
   progok: async () => {
