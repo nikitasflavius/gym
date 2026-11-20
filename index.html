@@ -204,6 +204,14 @@ h2{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
 .sh .field input,.sh .field select,.sh .field textarea{margin-top:0}
 .hero .btn.or{background:var(--or)}
 
+.phase-panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:13px;margin:12px 0}
+.phase-caption{font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin-bottom:8px}
+.phase-panel p{color:var(--muted);font-size:13px;margin:6px 0 12px}
+.phase-cta{min-height:56px}
+.phase-adjust{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.phase-adjust button{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-weight:700;font-size:12px;flex:1}
+.saved-rest{background:var(--surface2);border-radius:12px;padding:12px;margin-top:10px}
+.advice{font-size:12px;margin-top:5px;color:var(--muted);line-height:1.35}
 </style>
 </head>
 <body>
@@ -856,6 +864,18 @@ function viewSession() {
   } else if (c && c.warm && A.warmEnd) {
     h += '<div class="hint" style="margin-top:4px">Разминка закончена в ' + new Date(A.warmEnd).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) + '</div>';
   }
+  if (c && c.warm && !A.warmEnd && !anySets) {
+    // Разминку завершаем прежде, чем запускаем таймер.
+  } else if (phaseOf(A) === 'rest') {
+    h += '<div class="phase-panel"><div class="phase-caption">ОТДЫХ · ПЛАН ' + mmss(A.restPlan || 0) + '</div>' +
+      '<p>' + (A.pending && !A.pending.done ? 'Таймер идёт. Запиши результат только что выполненного подхода ниже.' : 'Подход записан. Когда будешь готов, переходи к следующему.') + '</p>' +
+      '<div class="phase-adjust"><button data-a="adjrest" data-v="-15">−15 с</button><button data-a="adjrest" data-v="-30">−30 с</button><button data-a="adjrest" data-v="-60">−60 с</button><button data-a="adjrest" data-v="15">+15 с</button></div>' +
+      (A.pending && !A.pending.done ? '<button class="btn sm" data-a="undorest">Отменить запуск отдыха</button>' : '<button class="btn or phase-cta" data-a="gotoset">Иду делать →</button>') + '</div>';
+  } else {
+    h += '<div class="phase-panel"><div class="phase-caption">ПОДГОТОВКА И ВЫПОЛНЕНИЕ</div>' +
+      '<button class="btn or phase-cta" data-a="startrest">Подход выполнен · Отдых</button>' +
+      '<div class="hint">Записывать вес и повторы можно уже во время отдыха.</div></div>';
+  }
   A.items.forEach((it, i) => {
     if (i === A.cur) h += exCard(i);
     else h += itemRow(i);
@@ -924,7 +944,10 @@ function exCard(i) {
   if (hw.length) h += '<div class="qw"><span class="lb">из истории</span>' + hw.map(w => '<button class="' + (w === d.w ? 'on' : '') + '" data-a="qw" data-v="' + w + '">' + fn(w) + '</button>').join('') + '</div>';
   h += '<div class="types">' + TYPES.map(t => '<button class="' + (d.ty === t ? 'on' : '') + '" data-a="ty" data-v="' + t + '">' + t + '</button>').join('') + (isDrop ? '<button class="on" data-a="ty" data-v="норм">дроп ✕</button>' : '') + '</div>';
   h += '<div class="diff">' + DF.map(k => '<button class="d-' + DFC[k] + ' ' + (d.df === k ? 'on' : '') + '" data-a="df" data-v="' + k + '"><span>' + k + '</span></button>').join('') + '</div>';
-  h += '<div class="logrow"><button class="btn or" data-a="log">' + (isDrop ? 'Записать дроп' : 'Записать подход') + '</button>' + (done.length && !isDrop ? '<button class="btn dropb" data-a="drop">+ дроп</button>' : '') + '</div>';
+  const savedDuringRest = phaseOf(A) === 'rest' && A.pending && A.pending.done;
+  h += savedDuringRest
+    ? '<div class="hint saved-rest">Подход сохранён. Нажми «Иду делать», когда закончишь отдых.</div>'
+    : '<div class="logrow"><button class="btn or" data-a="log">' + (isDrop ? 'Записать дроп' : 'Записать подход') + '</button>' + (done.length && !isDrop ? '<button class="btn dropb" data-a="drop">+ дроп</button>' : '') + '</div>';
   if (done.length) h += '<div class="dn">' + done.map(r => '<button class="sc ' + (r.ty === 'дроп' ? 'drop' : '') + '" data-a="editset" data-v="' + r.id + '">' + (r.ty === 'дроп' ? '↓ ' : '') + fn(r.w) + '×' + r.r + (r.m === 'sec' ? 'с' : '') + (r.df === 'разминка' ? ' р' : '') + (r.pr ? ' 🏆' : '') + '</button>').join('') + '</div>';
   h += '<div class="mini"><button data-a="replace">Заменить</button><button class="' + (UI.ask === 'skip' ? 'ask' : '') + '" data-a="skip">' + (UI.ask === 'skip' ? 'Точно?' : 'Пропустить') + '</button><button data-a="note">Заметка' + (it.note || it.pnote ? ' •' : '') + '</button><button data-a="link" class="' + (it.grp ? 'lnkon' : '') + '">Связка' + (it.grp ? ' ✓' : '') + '</button></div>';
   if (itemWork(A, it) >= it.sets) h += '<button class="btn sm" style="margin-top:10px" data-a="next">К следующему упражнению ›</button>';
@@ -942,8 +965,9 @@ function viewSummary(sid) {
   let h = '<div class="date">' + dlabel(s.d) + '</div><h1>Тренировка завершена</h1>';
   h += '<div class="sum"><div class="k">' + esc(cxLabel(s.cx)).toUpperCase() + '</div><div class="bg num">' + s.min + ' <small>мин всего</small></div><div class="s2">рабочая часть ' + s.wmin + ' мин' + (s.warmEnd ? ' · разминка ' + Math.max(0, Math.round((s.warmEnd - s.start) / 60000)) + ' мин' : '') + '</div></div>';
   h += '<div class="kp"><div><b class="num">' + s.sets + '</b><small>подходов</small></div><div><b class="num">' + s.prs + '</b><small>рекордов</small></div><div><b class="num">' + (s.subs + s.skips) + '</b><small>замен / пропусков</small></div></div>';
+  if (s.restSec != null) h += '<div class="hint">Зафиксированный отдых: ' + mmss(s.restSec) + '.</div>';
   if (times.length) {
-    h += '<h2>Время по упражнениям</h2><div class="bars">' + times.map(t => '<div class="bar"><span>' + esc(EX(t.ex).name) + '</span><span class="t"><i class="' + (t.sec > avg * 1.4 ? 'long' : '') + '" style="width:' + Math.round(t.sec / mx * 100) + '%"></i></span><span class="num">' + Math.round(t.sec / 60) + ' м</span></div>').join('') + '</div>';
+    h += '<h2>Интервалы между подходами (включая подготовку)</h2><div class="bars">' + times.map(t => '<div class="bar"><span>' + esc(EX(t.ex).name) + '</span><span class="t"><i class="' + (t.sec > avg * 1.4 ? 'long' : '') + '" style="width:' + Math.round(t.sec / mx * 100) + '%"></i></span><span class="num">' + Math.round(t.sec / 60) + ' м</span></div>').join('') + '</div>';
   }
   if (prs.length) h += '<h2>Рекорды</h2><div class="bars prs">' + prs.map(r => '🏆 <b>' + esc(EX(r.ex).name) + '</b> — ' + fn(r.w) + '×' + r.r + (r.m === 'sec' ? 'с' : '') + (r.e1 ? ' (1ПМ ≈ ' + fn(r.e1) + ')' : '')).join('<br>') + '</div>';
   h += '<div class="field"><label>Заметка к тренировке</label><textarea data-f="snote" data-sid="' + esc(sid) + '" placeholder="Как самочувствие, что мешало…">' + esc(s.note || '') + '</textarea></div>';
