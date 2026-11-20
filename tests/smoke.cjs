@@ -73,4 +73,23 @@ const restored = app(store).instance;
 assert.equal(restored.S.log.length, 1);
 assert.equal(restored.phaseOf(restored.S.active), 'ready');
 
-console.log('Gym 2.0 smoke: PASS (фазы, таймер, правка времени, дубли, восстановление, вес)');
+// Незавершённый результат подхода переживает перезагрузку без записи фиктивной строки.
+const pendingCase = app();
+const p = pendingCase.instance;
+p.startSession('B');
+p.S.active.warmEnd = Date.now();
+p.beginRest();
+const waitingStart = p.S.active.restStart;
+p.save();
+const resumedPending = app(pendingCase.store).instance;
+assert.equal(resumedPending.phaseOf(resumedPending.S.active), 'rest');
+assert.equal(resumedPending.S.active.restStart, waitingStart);
+assert.equal(resumedPending.S.active.pending.done, false);
+assert.equal(resumedPending.S.log.length, 0);
+resumedPending.undoRest();
+assert.equal(resumedPending.phaseOf(resumedPending.S.active), 'ready');
+// Завершение занятия использует настоящее время, а не последнюю запись.
+gym.S.active.start = Date.now() - 5 * 60_000;
+assert(gym.summarize(gym.S.active).min >= 5);
+
+console.log('Gym 2.0 smoke: PASS (фазы, таймер, незаписанный подход, корректировка, дубли, перезагрузка, длительность, вес)');
