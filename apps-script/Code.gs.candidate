@@ -144,7 +144,11 @@ function opSession_(ctx, s) {
   if (cols[0] && cols[0] !== 'Отдых, сек') throw new Error('Столбец O уже используется: ' + cols[0]);
   if (cols[1] && cols[1] !== 'События времени, JSON') throw new Error('Столбец P уже используется: ' + cols[1]);
   sh.getRange(1, 15, 1, 2).setValues([['Отдых, сек', 'События времени, JSON']]);
-  sh.getRange(row, 1, 1, 16).setValues([[s.sid, dateCell_(ctx, s.d), s.cx, s.cyc, new Date(s.start), new Date(s.end), s.min, s.wmin, s.sets, s.prs, s.subs, s.skips, s.note || '', s.warmEnd ? new Date(s.warmEnd) : '', s.restSec == null ? '' : s.restSec, JSON.stringify(s.restEvents || [])]]);
+  // Старые клиенты могут не отправлять новые поля; в этом случае сохраняем ранее записанные метрики.
+  const oldExtra = row <= sh.getLastRow() ? sh.getRange(row, 15, 1, 2).getValues()[0] : ['', ''];
+  const rest = Object.prototype.hasOwnProperty.call(s, 'restSec') ? (s.restSec == null ? '' : s.restSec) : oldExtra[0];
+  const events = Object.prototype.hasOwnProperty.call(s, 'restEvents') ? JSON.stringify(s.restEvents || []) : oldExtra[1];
+  sh.getRange(row, 1, 1, 16).setValues([[s.sid, dateCell_(ctx, s.d), s.cx, s.cyc, new Date(s.start), new Date(s.end), s.min, s.wmin, s.sets, s.prs, s.subs, s.skips, s.note || '', s.warmEnd ? new Date(s.warmEnd) : '', rest, events]]);
 }
 function opExercise_(ctx, e) {
   const sh = sheet_(ctx, SH.pool);
