@@ -389,13 +389,19 @@ function histWeights(id) {
   for (const s of ses) for (const r of s.sets) if (isWork(r) && r.w > 0) set.add(r.w);
   return [...set].sort((a, b) => b - a).slice(0, 5);
 }
-function progressUp(it) {
+function progressAdvice(it) {
   const id = it.use || it.ex;
-  const ses = exSessions(id, S.active ? S.active.sid : '');
-  if (!ses.length) return false;
-  const hs = ses[ses.length - 1].sets.filter(isWork);
-  if (hs.length < it.sets) return false;
-  return hs.slice(0, it.sets).every(r => r.r >= it.rmax);
+  const recent = exSessions(id, S.active ? S.active.sid : '').slice(-2);
+  if (recent.length !== 2) return '';
+  const a = recent.map(s => s.sets.filter(isWork).slice(0, it.sets));
+  if (a.some(sets => sets.length < it.sets)) return '';
+  // Сравниваем одинаковые рабочие веса; разминка и дроп-сеты исключены.
+  if (a[0].some((r, i) => Math.abs(r.w - a[1][i].w) > .001)) return '';
+  const allTop = a.every(sets => sets.every(r => r.r >= it.rmax && (r.df === 'легко' || r.df === 'средне')));
+  if (allTop) return 'Два занятия подряд верхний диапазон выполнен уверенно. Можно попробовать прибавить ' + fn(EX(id).step) + ' кг.';
+  const hard = a[1].filter(r => r.df === 'тяжело' || r.df === 'отказ').length;
+  if (hard >= Math.ceil(it.sets / 2)) return 'Последняя тренировка далась тяжело. Пока лучше сохранить рабочий вес.';
+  return '';
 }
 
 /* ---------- сессия ---------- */
@@ -824,7 +830,6 @@ function viewHome() {
   const A = S.active;
   const nxt = nextComplex();
   let h = '<div class="date">' + DOW[new Date().getDay()] + ', ' + dlabel(dstr()) + ' · цикл ' + S.cfg.cycle + '</div><h1>Тренировка</h1>';
-  h += weightCard();
   if (A) {
     const n = sessionRows(A.sid).length;
     h += '<h2>Сейчас идёт</h2><div class="hero"><span class="tag">В ПРОЦЕССЕ</span><div class="big">' + esc(cxLabel(A.cx)) + '</div><p>Подходов записано: ' + n + '</p><button class="btn or" data-a="resume">Продолжить</button></div>';
@@ -920,7 +925,7 @@ function exCard(i) {
     '<div class="sch">' + it.sets + ' × ' + it.rmin + (it.rmax !== it.rmin ? '–' + it.rmax : '') + (sec ? ' с' : '') + ' · отдых ' + mmss(it.rest) + '</div>' +
     (it.grp ? '<div class="sch" style="color:var(--or);font-weight:700">Связка ' + grpNum(A, it.grp) + ': ' + grpNames(A, it).map(esc).join(' → ') + '</div>' : '') +
     (it.rep ? '<div class="sch">вместо: ' + esc(EX(it.ex).name) + '</div>' : '') +
-    (progressUp(it) ? '<span class="up" style="margin:4px 0 0">↑ повышай вес</span>' : '') + '</div></div>';
+    (progressAdvice(it) ? '<div class="advice">' + esc(progressAdvice(it)) + '</div>' : '') + '</div></div>';
   const vs = variantsOf(it.ex);
   if (vs.length > 1 && !it.rep) h += '<div class="vars">' + vs.map(v => '<button class="' + (v.id === id ? 'on' : '') + '" data-a="variant" data-v="' + v.id + '">' + esc(v.name.replace(/^.*?\s(в|на)\s/, '')) + '</button>').join('') + '</div>';
   h += '<div class="dots">' + Array.from({ length: Math.max(it.sets, work) }, (_, k) => '<i class="' + (k < work ? (k < it.sets ? 'd' : 'x') : (k === work ? 'c' : '')) + '"></i>').join('') + '</div>';
@@ -998,27 +1003,19 @@ function viewProgress() {
 
 /* ---------- вес ---------- */
 function viewWeight() {
-  const d = dstr(), cur = weightOn(d);
-  const val = wval();
-  let h = '<h1>Вес</h1><div class="card wcard"><small style="color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.05em">УТРО · ' + dlabel(d).toUpperCase() + '</small>' +
+  const d = dstr(), cur = weightOn(d), val = wval();
+  let h = '<h1>Вес</h1><div class="card wcard"><small style="color:var(--muted);font-weight:700;font-size:11px;letter-spacing:.05em">ИЗМЕРЕНИЕ · ' + dlabel(d).toUpperCase() + '</small>' +
     '<div class="steps" style="grid-template-columns:1fr;margin-top:4px"><div class="step" style="border:0;padding:0"><div class="n"><button class="pm" data-a="wday" data-v="-0.1">−</button><button class="v num" data-a="wnumday" data-v="' + d + '">' + fn(val) + '</button><button class="pm" data-a="wday" data-v="0.1">+</button></div></div></div>' +
     '<button class="btn or" style="margin-top:10px" data-a="wsave" data-v="' + d + '">' + (cur != null ? 'Обновить запись' : 'Записать вес') + '</button></div>';
-  const a7 = avgRange(addDays(d, -6), d), p7 = avgRange(addDays(d, -13), addDays(d, -7));
-  const co = corridor(d);
-  if (a7 != null) {
-    const ch = p7 != null ? a7 - p7 : null;
-    let st = 'в коридоре', cl = 'ok';
-    if (a7 < co.lo - 0.15) { st = 'ниже коридора'; cl = 'wait'; } else if (a7 > co.hi + 0.15) { st = 'выше коридора'; cl = 'wait'; }
-    h += '<div class="card"><div class="kp" style="margin:0"><div><b class="num">' + fn(r1(a7)) + '</b><small>среднее 7 дн.</small></div><div><b class="num">' + (ch == null ? '—' : (ch > 0 ? '+' : '') + fn(r2(ch))) + '</b><small>к прошлой неделе</small></div><div><b class="num">' + fn(r1(co.lo)) + '–' + fn(r1(co.hi)) + '</b><small>коридор сегодня</small></div></div><div class="syncline ' + cl + '">Среднее: ' + st + '</div></div>';
-  }
-  const from = addDays(d, -41);
-  const ws = S.weights.filter(w => w.d >= from);
+  const a7 = avgRange(addDays(d, -6), d), aPrev = avgRange(addDays(d, -13), addDays(d, -7));
+  if (a7 != null) h += '<div class="card"><div class="kp" style="margin:0"><div><b class="num">' + fn(r1(a7)) + ' кг</b><small>среднее за 7 дней</small></div><div><b class="num">' + (aPrev == null ? '—' : (a7 >= aPrev ? '+' : '') + fn(r2(a7 - aPrev)) + ' кг') + '</b><small>к прошлой неделе</small></div></div><p class="hint">Ориентир — тенденция за несколько недель, а не отдельное измерение.</p></div>';
+  const from = addDays(d, -55), ws = S.weights.filter(w => w.d >= from);
   if (ws.length >= 2) {
-    const x = s => daysBetween(from, s);
+    const x = date => daysBetween(from, date);
     const avgPts = ws.map(w => [x(w.d), avgRange(addDays(w.d, -6), w.d)]).filter(p => p[1] != null);
-    const days = [x(ws[0].d), x(d)];
-    const band = { lo: days.map(k => [k, corridor(addDays(from, k)).lo]), hi: days.map(k => [k, corridor(addDays(from, k)).hi]) };
-    h += '<h2>Динамика · 6 недель</h2><div class="card">' + lineChart([{ pts: ws.map(w => [x(w.d), w.w]), color: 'var(--muted)', dots: true, r: 2.5, width: 1.2 }, { pts: avgPts, color: 'var(--or)', width: 2.5 }], band, 340, 170, [dlabel(ws[0].d), dlabel(d)]) + '<div class="hint" style="margin:4px 0 0">серые точки — взвешивания · оранжевая — среднее за 7 дней · зелёная полоса — целевой коридор</div></div>';
+    h += '<h2>Динамика · 8 недель</h2><div class="card">' +
+      lineChart([{ pts: ws.map(w => [x(w.d), w.w]), color: 'var(--muted)', dots: true, r: 2.5, width: 1.2 }, { pts: avgPts, color: 'var(--or)', width: 2.5 }], null, 340, 170, [dlabel(ws[0].d), dlabel(d)]) +
+      '<div class="hint" style="margin:4px 0 0">Точки — взвешивания · линия — среднее за 7 дней</div></div>';
   }
   const rec = S.weights.slice(-10).reverse();
   if (rec.length) h += '<h2>Записи</h2><div class="recent">' + rec.map(w => '<button class="rrow" data-a="wnumday" data-v="' + w.d + '"><b>' + dlabel(w.d) + '</b><span>' + dow(w.d) + '</span><b class="num">' + fn(w.w) + '</b></button>').join('') + '</div>';
@@ -1226,7 +1223,7 @@ const ACT = {
   tab: el => { UI.tab = el.dataset.v; window.scrollTo(0, 0); render(); },
   start: el => { if (S.active) { UI.tab = 'train'; render(); return; } startSession(el.dataset.v); UI.tab = 'train'; UI.sum = null; wake(); window.scrollTo(0, 0); render(); },
   resume: () => { UI.tab = 'train'; render(); },
-  open: el => { const A = S.active, i = +el.dataset.i; A.cur = i; A.items[i].skip = false; save(); render(); scrollEx(); },
+  open: el => { const A = S.active, i = +el.dataset.i; if (A.pending && !A.pending.done && i !== A.pending.item) { toast('Сначала запиши начатый подход'); return; } A.cur = i; A.items[i].skip = false; save(); render(); scrollEx(); },
   warmdone: () => { S.active.warmEnd = nowS(); save(); render(); },
   wstep: el => { const it = cur(), d = draft(it), st = EX(it.use || it.ex).step || 1; d.w = Math.max(0, r2(d.w + (+el.dataset.v) * st)); save(); render(); },
   wnum: () => { const it = cur(), d = draft(it); openNum('Вес, кг', d.w ? fn(d.w) : '', v => { d.w = Math.max(0, r2(v)); save(); }); },
@@ -1249,8 +1246,8 @@ const ACT = {
   },
   tech: el => { UI.tech[el.dataset.v] = !UI.tech[el.dataset.v]; render(); },
   variant: el => { const it = cur(); it.use = el.dataset.v; it.d = null; save(); render(); },
-  next: () => { const A = S.active; A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); },
-  skip: () => { const A = S.active; if (UI.ask === 'skip') { cur().skip = true; UI.ask = ''; A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); } else { UI.ask = 'skip'; render(); } },
+  next: () => { const A = S.active; if (A.pending && !A.pending.done) { toast('Сначала запиши подход'); return; } A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); },
+  skip: () => { const A = S.active; if (A.pending && !A.pending.done) { toast('Сначала запиши подход'); return; } if (UI.ask === 'skip') { cur().skip = true; UI.ask = ''; A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); } else { UI.ask = 'skip'; render(); } },
   link: () => { const A = S.active, it = cur(); const sel = it.grp ? A.items.map((x, i) => i).filter(i => i !== A.cur && A.items[i].grp === it.grp) : []; openSheet({ kind: 'link', sel }); },
   lnktoggle: el => { const i = +el.dataset.v, sel = UI.sheet.sel, k = sel.indexOf(i); if (k >= 0) sel.splice(k, 1); else sel.push(i); renderSheet(); },
   linkok: () => {
