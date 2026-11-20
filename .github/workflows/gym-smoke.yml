@@ -1,0 +1,17 @@
+name: Gym smoke checks
+on:
+  push:
+    branches:
+      - gym-2.0-development-2026-11-20
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/gym-smoke.yml'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript and offline flows
+        run: node tests/smoke.cjs
