@@ -393,7 +393,7 @@ function progressAdvice(it) {
   const id = it.use || it.ex;
   const recent = exSessions(id, S.active ? S.active.sid : '').slice(-2);
   if (recent.length !== 2) return '';
-  const a = recent.map(s => s.sets.filter(isWork).slice(0, it.sets));
+  const a = recent.map(s => s.sets.filter(r => isWork(r) && r.ty === 'норм').slice(0, it.sets));
   if (a.some(sets => sets.length < it.sets)) return '';
   // Сравниваем одинаковые рабочие веса; разминка и дроп-сеты исключены.
   if (a[0].some((r, i) => Math.abs(r.w - a[1][i].w) > .001)) return '';
@@ -874,7 +874,7 @@ function viewSession() {
   } else if (phaseOf(A) === 'rest') {
     h += '<div class="phase-panel"><div class="phase-caption">ОТДЫХ · ПЛАН ' + mmss(A.restPlan || 0) + '</div>' +
       '<p>' + (A.pending && !A.pending.done ? 'Таймер идёт. Запиши результат только что выполненного подхода ниже.' : 'Подход записан. Когда будешь готов, переходи к следующему.') + '</p>' +
-      '<div class="phase-adjust"><button data-a="adjrest" data-v="-15">−15 с</button><button data-a="adjrest" data-v="-30">−30 с</button><button data-a="adjrest" data-v="-60">−60 с</button><button data-a="adjrest" data-v="15">+15 с</button></div>' +
+      '<div class="phase-adjust"><button data-a="adjrest" data-v="-15">−15 с</button><button data-a="adjrest" data-v="-30">−30 с</button><button data-a="adjrest" data-v="-60">−60 с</button><button data-a="restcustom">Другое…</button></div>' +
       (A.pending && !A.pending.done ? '<button class="btn sm" data-a="undorest">Отменить запуск отдыха</button>' : '<button class="btn or phase-cta" data-a="gotoset">Иду делать →</button>') + '</div>';
   } else {
     h += '<div class="phase-panel"><div class="phase-caption">ПОДГОТОВКА И ВЫПОЛНЕНИЕ</div>' +
@@ -951,7 +951,7 @@ function exCard(i) {
   h += '<div class="diff">' + DF.map(k => '<button class="d-' + DFC[k] + ' ' + (d.df === k ? 'on' : '') + '" data-a="df" data-v="' + k + '"><span>' + k + '</span></button>').join('') + '</div>';
   const savedDuringRest = phaseOf(A) === 'rest' && A.pending && A.pending.done;
   h += savedDuringRest
-    ? '<div class="hint saved-rest">Подход сохранён. Нажми «Иду делать», когда закончишь отдых.</div>'
+    ? '<div class="hint saved-rest">Подход сохранён. Нажми «Иду делать», когда закончишь отдых.</div>' + (done.length && !isDrop && (!it.grp || A.restPlan > 0) ? '<button class="btn sm dropb" style="margin-top:8px" data-a="drop">+ дроп без отдыха</button>' : '')
     : '<div class="logrow"><button class="btn or" data-a="log">' + (isDrop ? 'Записать дроп' : 'Записать подход') + '</button>' + (done.length && !isDrop ? '<button class="btn dropb" data-a="drop">+ дроп</button>' : '') + '</div>';
   if (done.length) h += '<div class="dn">' + done.map(r => '<button class="sc ' + (r.ty === 'дроп' ? 'drop' : '') + '" data-a="editset" data-v="' + r.id + '">' + (r.ty === 'дроп' ? '↓ ' : '') + fn(r.w) + '×' + r.r + (r.m === 'sec' ? 'с' : '') + (r.df === 'разминка' ? ' р' : '') + (r.pr ? ' 🏆' : '') + '</button>').join('') + '</div>';
   h += '<div class="mini"><button data-a="replace">Заменить</button><button class="' + (UI.ask === 'skip' ? 'ask' : '') + '" data-a="skip">' + (UI.ask === 'skip' ? 'Точно?' : 'Пропустить') + '</button><button data-a="note">Заметка' + (it.note || it.pnote ? ' •' : '') + '</button><button data-a="link" class="' + (it.grp ? 'lnkon' : '') + '">Связка' + (it.grp ? ' ✓' : '') + '</button></div>';
@@ -1237,7 +1237,14 @@ const ACT = {
   gotoset: () => goToSet(),
   undorest: () => undoRest(),
   adjrest: el => adjustRest(+el.dataset.v),
+  restcustom: () => openNum('На сколько секунд отдых начался раньше?', 30, sec => adjustRest(-Math.max(0, sec))),
   drop: () => {
+    const A = S.active;
+    if (A && phaseOf(A) === 'rest' && A.pending && A.pending.done) {
+      // Дроп выполняется без обычного отдыха после предыдущего подхода.
+      A.phase = 'ready'; A.restStart = 0; A.restPlan = 0; A.pending = null; A.beeped = false;
+      A.setStarted = Date.now();
+    }
     const it = cur(), id = it.use || it.ex, e = EX(id), done = setsOf(S.active.sid, id), last = done[done.length - 1];
     const d = draft(it), st = e.step || 1;
     d.ty = 'дроп'; d.df = 'отказ';
