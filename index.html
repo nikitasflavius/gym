@@ -230,6 +230,7 @@ const DEMO_HINTS = {
   pulldown: 'Зафиксируй бёдра, держи корпус стабильно. Тяни рукоять к верхней части груди, ведя локти вниз; избегай рывка корпусом.',
   leg_press: 'Плотно прижми таз и спину к сиденью. Опускай платформу до контролируемой глубины, не отрывая поясницу; вверху не блокируй колени.'
 };
+const MOTION_GUIDES = { pulldown: "<svg viewBox=\"0 0 240 172\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-label=\"Тяга верхнего блока: плавное опускание грифа к верхней части груди и возврат\">\n<rect width=\"240\" height=\"172\" fill=\"#f2f5f9\"/><text x=\"120\" y=\"14\" text-anchor=\"middle\" fill=\"#1f3a5c\" font-size=\"11\" font-weight=\"bold\">ТЯГА ВЕРХНЕГО БЛОКА · ДВИЖЕНИЕ</text>\n<g stroke=\"#aebedb\" stroke-width=\"3\" stroke-linecap=\"round\"><line x1=\"120\" y1=\"22\" x2=\"120\" y2=\"33\"/><line x1=\"45\" y1=\"25\" x2=\"195\" y2=\"25\"/><path d=\"M95 128H145M120 128V153M120 153H155\"/></g>\n<g stroke=\"#2a4d7a\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"><circle cx=\"120\" cy=\"70\" r=\"9\"/><path d=\"M120 81V121L103 151M120 121L137 151\"/>\n<polyline points=\"111,86 91,61 74,36\"><animate attributeName=\"points\" values=\"111,86 91,61 74,36;111,86 91,100 74,93;111,86 91,61 74,36\" dur=\"2.8s\" repeatCount=\"indefinite\"/></polyline>\n<polyline points=\"129,86 149,61 166,36\"><animate attributeName=\"points\" values=\"129,86 149,61 166,36;129,86 149,100 166,93;129,86 149,61 166,36\" dur=\"2.8s\" repeatCount=\"indefinite\"/></polyline></g>\n<g stroke=\"#ee6c3b\" stroke-width=\"5\" stroke-linecap=\"round\"><line x1=\"68\" x2=\"172\" y1=\"36\" y2=\"36\"><animate attributeName=\"y1\" values=\"36;93;36\" dur=\"2.8s\" repeatCount=\"indefinite\"/><animate attributeName=\"y2\" values=\"36;93;36\" dur=\"2.8s\" repeatCount=\"indefinite\"/></line></g>\n<line x1=\"120\" y1=\"25\" x2=\"120\" y2=\"36\" stroke=\"#8495a8\" stroke-width=\"2\"><animate attributeName=\"y2\" values=\"36;93;36\" dur=\"2.8s\" repeatCount=\"indefinite\"/></line>\n<text x=\"120\" y=\"165\" text-anchor=\"middle\" font-size=\"9\" fill=\"#44546a\">Тяни локти вниз, корпус сохраняй устойчивым</text></svg>" };
 const VERSION = '2.0-dev.1';
 const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const DOW = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
@@ -758,7 +759,7 @@ function applyProgram(pr) {
 }
 
 /* ====== Экраны ====== */
-const UI = { tab: 'train', sum: null, sheet: null, tech: {}, ask: '', warmOpen: false, pdetail: null };
+const UI = { tab: 'train', sum: null, sheet: null, tech: {}, demoMotion: {}, ask: '', warmOpen: false, pdetail: null };
 
 const ICON_NAV = {
   train: '<path d="M6 8v8M3 10v4M18 8v8M21 10v4M6 12h12"/>',
@@ -945,7 +946,11 @@ function exCard(i) {
   if (e.tech || BIG[e.icon]) {
     const open = !!UI.tech[id];
     h += '<div class="tech"><button class="tb" data-a="tech" data-v="' + id + '">Как делать ' + (open ? '▴' : '▾') + '</button>' +
-      (open ? (BIG[e.icon] ? '<div class="big">' + BIG[e.icon] + '</div>' : '') + (e.tech || DEMO_HINTS[e.icon] ? '<p>' + esc(e.tech || DEMO_HINTS[e.icon]) + '</p>' : '') : '') + '</div>';
+      (open ? (BIG[e.icon] ? '<div class="big">' + BIG[e.icon] + '</div>' : '') +
+      (e.tech || DEMO_HINTS[e.icon] ? '<p>' + esc(e.tech || DEMO_HINTS[e.icon]) + '</p>' : '') +
+      (MOTION_GUIDES[e.icon] ? '<button class="btn sm" style="margin-top:7px" data-a="demomotion" data-v="' + id + '">' +
+        (UI.demoMotion[id] ? 'Остановить движение' : '▶ Показать движение') + '</button>' +
+        (UI.demoMotion[id] ? '<div class="big">' + MOTION_GUIDES[e.icon] + '</div>' : '') : '') : '') + '</div>';
   }
   const isDrop = d.ty === 'дроп';
   h += '<div class="set">ПОДХОД ' + (work + (d.df === 'разминка' ? 0 : 1)) + (isDrop ? ' <span class="tt">ДРОП</span>' : '') + (d.df === 'разминка' ? ' <span class="tt">РАЗМИНОЧНЫЙ</span>' : '') + '</div>';
@@ -1263,7 +1268,8 @@ const ACT = {
     if (last) { d.w = Math.max(st, Math.round(last.w * 0.75 / st) * st); d.r = Math.max(5, last.r); }
     save(); render();
   },
-  tech: el => { UI.tech[el.dataset.v] = !UI.tech[el.dataset.v]; render(); },
+  tech: el => { UI.tech[el.dataset.v] = !UI.tech[el.dataset.v]; if (!UI.tech[el.dataset.v]) UI.demoMotion[el.dataset.v] = false; render(); },
+  demomotion: el => { UI.demoMotion[el.dataset.v] = !UI.demoMotion[el.dataset.v]; render(); },
   variant: el => { const it = cur(); it.use = el.dataset.v; it.d = null; save(); render(); },
   next: () => { const A = S.active; if (A.pending && !A.pending.done) { toast('Сначала запиши подход'); return; } A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); },
   skip: () => { const A = S.active; if (A.pending && !A.pending.done) { toast('Сначала запиши подход'); return; } if (UI.ask === 'skip') { cur().skip = true; UI.ask = ''; A.cur = firstUndone(A, A.cur); save(); render(); scrollEx(); } else { UI.ask = 'skip'; render(); } },
