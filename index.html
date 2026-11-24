@@ -491,18 +491,36 @@ function undoRest() {
   A.beeped = false; save(); render();
 }
 function adjustRest(seconds) {
-  const A = S.active; if (!A || phaseOf(A) !== 'rest' || !A.restStart) return;
-  const min = A.setStarted || A.start;
-  const newStart = Math.min(Date.now(), Math.max(min, A.restStart + seconds * 1000));
-  A.restStart = newStart; A.beeped = false;
+  const A = S.active;
+  if (!A || phaseOf(A) !== 'rest' || !A.restStart) {
+    toast('Сначала запусти отдых'); return;
+  }
+  if (!Number.isFinite(seconds) || !seconds) return;
+  // Нельзя переносить отдых до начала занятия или накладывать его на предыдущий отдых.
+  // Однако время кнопки «Иду делать» не должно искусственно запрещать коррекцию.
+  const past = A.restEvents || [];
+  const lastEnd = past.length ? past[past.length - 1].end : A.start;
+  const earliest = Math.max(A.start, lastEnd);
+  const prev = A.restStart;
+  const next = Math.min(Date.now(), Math.max(earliest, prev + seconds * 1000));
+  const shift = Math.round((prev - next) / 1000);
+  if (next === prev) {
+    toast(seconds < 0 ? 'Не могу сдвинуть раньше начала занятия или прошлого отдыха' : 'Начало отдыха уже максимально позднее');
+    return;
+  }
+  A.restStart = next; A.beeped = false;
   if (A.pending) {
-    A.pending.ts = newStart;
+    A.pending.ts = next;
     if (A.pending.done && A.pending.recId) {
       const rec = S.log.find(x => x.id === A.pending.recId);
-      if (rec) { rec.ts = Math.floor(newStart / 1000) * 1000; touchLog(); qSet(rec); }
+      if (rec) { rec.ts = Math.floor(next / 1000) * 1000; touchLog(); qSet(rec); }
     }
   }
   save(); render();
+  const whole = Math.abs(Math.round(seconds));
+  const amount = Math.abs(shift);
+  toast('Начало отдыха ' + (shift > 0 ? 'раньше' : 'позже') + ' на ' + amount + ' с' +
+    (amount < whole ? ' (достигнута граница)' : ''));
 }
 
 /* ---------- время ---------- */
