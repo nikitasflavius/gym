@@ -40,8 +40,9 @@ function app(existing) {
 
 const { instance: gym, store } = app();
 gym.startSession('A');
+gym.S.active.start = Date.now() - 120_000;
 gym.S.active.warmEnd = Date.now();
-gym.S.active.setStarted = Date.now() - 120_000;
+gym.S.active.setStarted = Date.now();
 assert.equal(gym.phaseOf(gym.S.active), 'ready');
 gym.beginRest();
 assert.equal(gym.phaseOf(gym.S.active), 'rest');
@@ -64,6 +65,13 @@ assert(gym.S.log[0].ts <= before - 14_000, 'Сохранённый подход 
 gym.goToSet();
 assert.equal(gym.phaseOf(gym.S.active), 'ready');
 assert.equal(gym.S.active.restEvents.length, 1);
+// Новый отдых не может пересечь уже закрытый интервал, даже при большой коррекции.
+gym.beginRest();
+const secondRest = gym.S.active.restStart;
+gym.adjustRest(-60);
+assert(gym.S.active.restStart >= gym.S.active.restEvents[0].end);
+assert(gym.S.active.restStart <= secondRest);
+gym.undoRest();
 const summary = gym.summarize(gym.S.active);
 assert(summary.end >= gym.S.log[0].ts);
 assert(summary.restSec >= 15, 'Отдых учитывается при расчёте');
