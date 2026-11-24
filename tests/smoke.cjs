@@ -34,7 +34,7 @@ function app(existing) {
   };
   const init = new Function('document', 'window', 'navigator', 'localStorage',
     'setInterval', 'setTimeout', 'clearTimeout',
-    source[1] + '\nreturn { S, startSession, beginRest, logSet, goToSet, undoRest, adjustRest, summarize, draft, phaseOf, viewWeight, nextComplex, save };');
+    source[1] + '\nreturn { S, ACT, startSession, beginRest, logSet, goToSet, undoRest, adjustRest, summarize, draft, phaseOf, viewWeight, nextComplex, save };');
   return { instance: init(document, window, navigator, localStorage, () => {}, () => {}, () => {}), store };
 }
 
@@ -100,4 +100,58 @@ assert.equal(resumedPending.phaseOf(resumedPending.S.active), 'ready');
 gym.S.active.start = Date.now() - 5 * 60_000;
 assert(gym.summarize(gym.S.active).min >= 5);
 
-console.log('Gym 2.0 smoke: PASS (фазы, таймер, незаписанный подход, корректировка, дубли, перезагрузка, длительность, вес)');
+// Связка: между упражнениями не появляется фиктивный отдых, после круга — обычный.
+const linked = app().instance;
+linked.S.complexes = [{
+  key: 'A', name: 'Тест связки', sub: '', warm: '', items: [
+    { ex: 'e01', sets: 2, rmin: 8, rmax: 10, rest: 120, grp: 'test' },
+    { ex: 'e02', sets: 2, rmin: 8, rmax: 10, rest: 90, grp: 'test' }
+  ]
+}];
+linked.startSession('A');
+linked.draft(linked.S.active.items[0]).w = 50;
+linked.draft(linked.S.active.items[0]).r = 8;
+linked.beginRest();
+linked.logSet();
+assert.equal(linked.S.log.length, 1);
+assert.equal(linked.S.active.cur, 1, 'Переход к следующему упражнению связки');
+assert.equal(linked.phaseOf(linked.S.active), 'ready', 'Промежуточный переход без отдыха');
+assert.equal(linked.S.active.restStart, 0);
+assert.equal(linked.S.active.restEvents.length, 0);
+linked.draft(linked.S.active.items[1]).w = 20;
+linked.draft(linked.S.active.items[1]).r = 9;
+linked.beginRest();
+linked.logSet();
+assert.equal(linked.S.log.length, 2);
+assert.equal(linked.S.active.restPlan, 120, 'Пауза после полного круга по длинному отдыху');
+assert.equal(linked.phaseOf(linked.S.active), 'rest');
+assert.equal(linked.S.active.cur, 0);
+linked.goToSet();
+assert.equal(linked.phaseOf(linked.S.active), 'ready');
+assert.equal(linked.S.active.restEvents.length, 1, 'После полного круга отдых фиксируется');
+assert.equal(linked.S.log[0].grp, 'test');
+assert.equal(linked.S.log[1].grp, 'test');
+
+// Дроп-сет: после обычного подхода можно добавить дроп без отдельного отдыха.
+const drop = app().instance;
+drop.startSession('A');
+drop.S.active.warmEnd = Date.now();
+drop.draft(drop.S.active.items[0]).w = 60;
+drop.draft(drop.S.active.items[0]).r = 8;
+drop.beginRest();
+drop.logSet();
+assert.equal(drop.S.active.pending.done, true);
+drop.ACT.drop();
+assert.equal(drop.phaseOf(drop.S.active), 'ready');
+assert.equal(drop.S.active.restStart, 0);
+assert.equal(drop.draft(drop.S.active.items[0]).ty, 'дроп');
+drop.logSet();
+assert.equal(drop.S.log.length, 2);
+assert.equal(drop.S.log[0].ty, 'норм');
+assert.equal(drop.S.log[1].ty, 'дроп');
+assert.equal(drop.S.log[1].n, drop.S.log[0].n, 'Дроп относится к прежнему номеру подхода');
+assert.equal(drop.S.active.restEvents.length, 0, 'Ложного отдыха между обычным и дропом нет');
+drop.goToSet();
+assert.equal(drop.S.active.restEvents.length, 1, 'После дропа отдых учтён');
+
+console.log('Gym 2.0 smoke: PASS (фазы, таймер, правка, дубли, архивные состояния, связка и дроп)');
