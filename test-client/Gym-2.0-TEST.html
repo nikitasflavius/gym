@@ -1082,7 +1082,10 @@ function viewWeight() {
 
 /* ---------- ещё ---------- */
 function viewMore() {
-  let h = '<h1>Ещё</h1><h2>Подключение к таблице</h2><div class="card">' +
+  let h = '<h1>Ещё</h1><div class="card" style="border:2px dashed var(--or)"><b>Проверка связок и дроп-сетов</b>' +
+    '<p class="hint">Создать пробную свободную тренировку с 3 упражнениями, готовыми весами и одной связкой. Только для тестовой таблицы.</p>' +
+    '<button class="btn or" data-a="startflowtest">Начать тестовый сценарий</button></div>' +
+    '<h2>Подключение к таблице</h2><div class="card">' +
     '<div class="field" style="margin-top:0"><label>Адрес скрипта (Web app URL)</label><input data-f="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" value="' + esc(UI.conn && UI.conn.url != null ? UI.conn.url : S.cfg.url) + '"></div>' +
     '<div class="field"><label>Пароль (тот же, что в скрипте)</label><input data-f="token" type="password" autocomplete="off" value="' + esc(UI.conn && UI.conn.token != null ? UI.conn.token : S.cfg.token) + '"></div>' +
     '<div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="btn sm or" data-a="saveconn">Сохранить</button><button class="btn sm" data-a="pullnow">Обновить из таблицы</button></div>' +
@@ -1291,6 +1294,28 @@ function logSet() {
 const ACT = {
   tab: el => { UI.tab = el.dataset.v; window.scrollTo(0, 0); render(); },
   start: el => { if (S.active) { UI.tab = 'train'; render(); return; } startSession(el.dataset.v); UI.tab = 'train'; UI.sum = null; wake(); window.scrollTo(0, 0); render(); },
+  startflowtest: () => {
+    if (S.active) { toast('Заверши текущую тренировку перед тестом'); return; }
+    if (!S.cfg.url || !S.cfg.token || S.cfg.url !== TEST_SERVER_URL) {
+      toast('Сначала подключи тестовый сервер'); return;
+    }
+    const A = startSession('F');
+    const examples = [
+      { ex: 'e01', sets: 1, rmin: 8, rmax: 10, rest: 120, grp: 'TEST-LINK' },
+      { ex: 'e04', sets: 1, rmin: 12, rmax: 15, rest: 90, grp: 'TEST-LINK' },
+      { ex: 'e09', sets: 1, rmin: 8, rmax: 10, rest: 90, grp: '' }
+    ];
+    A.items = examples.map(it => Object.assign({}, it, {
+      use: it.ex, rep: false, skip: false, note: '', pnote: '', extra: true
+    }));
+    A.cur = 0; A.warmEnd = A.start;
+    A.snote = 'ТЕСТ GYM 2.0: связка + дроп-сет';
+    [[20, 8], [5, 12], [20, 8]].forEach(([w, r], i) => {
+      const d = draft(A.items[i]); d.w = w; d.r = r; d.df = 'легко';
+    });
+    UI.tab = 'train'; UI.sum = null; save(); render(); window.scrollTo(0, 0);
+    toast('Тестовая связка готова');
+  },
   resume: () => { UI.tab = 'train'; render(); },
   open: el => { const A = S.active, i = +el.dataset.i; if (A.pending && !A.pending.done && i !== A.pending.item) { toast('Сначала запиши начатый подход'); return; } A.cur = i; A.items[i].skip = false; save(); render(); scrollEx(); },
   warmdone: () => { S.active.warmEnd = nowS(); save(); render(); },
