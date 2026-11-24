@@ -1274,7 +1274,13 @@ function logSet() {
   } else {
     pending.done = true; pending.recId = rec.id;
   }
-  A.phase = 'rest'; A.restPlan = plan; A.beeped = false;
+  // В связке переход к следующему упражнению без паузы — не записываем фиктивный отдых.
+  if (jump >= 0 && plan === 0) {
+    A.phase = 'ready'; A.restStart = 0; A.restPlan = 0;
+    A.pending = null; A.beeped = false; A.setStarted = Date.now();
+  } else {
+    A.phase = 'rest'; A.restPlan = plan; A.beeped = false;
+  }
   if (jump >= 0) { A.cur = jump; toast('Дальше: ' + EX(A.items[jump].use || A.items[jump].ex).name); scrollEx(); }
   UI.ask = '';
   save(); render();
