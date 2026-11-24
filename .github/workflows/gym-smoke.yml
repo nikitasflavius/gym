@@ -17,3 +17,4 @@ jobs:
         run: |
           node tests/smoke.cjs
           node tests/server-smoke.cjs
+          node tests/preview-smoke.cjs
