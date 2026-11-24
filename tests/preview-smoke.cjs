@@ -1,0 +1,15 @@
+'use strict';
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const text = fs.readFileSync(path.join(__dirname,'../test-client/Gym-2.0-TEST.html'), 'utf8');
+const script = text.match(/<script>([\s\S]*?)<\/script>/);
+assert(script, 'Нет JavaScript тестового клиента');
+new Function(script[1]);
+assert(script[1].includes("const KEY = 'gym-app-v2-local-test-20261124';"), 'Тест использует чужое хранилище');
+assert(script[1].includes('const TEST_SERVER_URL = "https://script.google.com/macros/s/AKfycbzByCTrcgK12eJW4JtoY6NGDd7DGlw-MXm5NwORnNjuwDJhRmGpx8afy9XH0NpySaK8/exec";'), 'Неправильный адрес тестового сервера');
+assert(script[1].includes('if (url !== TEST_SERVER_URL)'), 'Отсутствует защита от рабочего сервера');
+assert(!script[1].includes('const TOKEN = '), 'Нельзя публиковать секрет');
+assert(!text.includes('navigator.serviceWorker.register('), 'Тест не должен регистрировать PWA кеш');
+assert(text.includes('ТЕСТОВАЯ ВЕРСИЯ'), 'Нет визуального предупреждения о тесте');
+console.log('Gym 2.0 local test client: PASS (separate state, server lock, no secrets, JS syntax)');
